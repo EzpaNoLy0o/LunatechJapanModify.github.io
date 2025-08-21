@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自動見積もり - Lunatech JAPAN Modify</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #F3F4F6; }
+        .accent-color { color: #EF4444; }
+        .section-bg { background-color: #1F2937; }
+        .form-input, .form-select { background-color: #374151; border: 1px solid #4B5563; color: #F3F4F6; border-radius: 0.375rem; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div><img src="b6aa69b769dd123c6625d33a737e2a5f.jpg" alt="Logo" class="h-12 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/200x50/111827/FFFFFF?text=Lunatech+JAPAN+Modify';"></div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="index.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_home">HOME</a>
+                <a href="services.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_services">事業内容</a>
+                <a href="company.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_company">会社概要</a>
+                <a href="estimate.html" class="text-red-500 font-bold" data-lang-key="nav_estimate">自動見積もり</a>
+                <a href="contact.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="nav_contact">お問い合わせ</a>
+            </div>
+             <div class="flex items-center">
+                 <button id="lang-switcher" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md">English</button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="bg-gray-900 py-16 md:py-20">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-5xl font-black text-white uppercase" data-lang-key="page_title">自動見積もり <span class="accent-color">/ AUTO ESTIMATE</span></h1>
+                <p class="mt-4 text-lg text-gray-300" data-lang-key="page_subtitle">ご希望のサービスを選択してください。概算費用をすぐに計算します。</p>
+            </div>
+        </section>
+
+        <section id="estimate-form" class="py-12 md:py-20">
+            <div class="container mx-auto px-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 section-bg rounded-lg p-8 md:p-12">
+                        <h2 class="text-3xl font-bold mb-8" data-lang-key="form_title">お見積もり内容</h2>
+                        <form id="calculation-form" class="space-y-6">
+                            <div>
+                                <label for="service-category" class="font-semibold block mb-2" data-lang-key="form_service">1. ご希望のサービス</label>
+                                <select id="service-category" class="w-full p-3 form-select">
+                                    <option value="0" data-lang-key="form_service_select">選択してください</option>
+                                    <option value="50000" data-lang-key="form_service_cad">3DCAD</option>
+                                    <option value="100000" data-lang-key="form_service_mfg">製造</option>
+                                    <option value="80000" data-lang-key="form_service_import">輸入</option>
+                                    <option value="150000" data-lang-key="form_service_re">リバースエンジニアリング</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="font-semibold block mb-2" data-lang-key="form_complexity">2. 規模・複雑度</label>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="1.0" class="sr-only" checked data-lang-key="form_complexity_s"> 小</label>
+                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="1.5" class="sr-only" data-lang-key="form_complexity_m"> 中</label>
+                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="2.5" class="sr-only" data-lang-key="form_complexity_l"> 大 / 複雑</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <div class="section-bg rounded-lg p-8 sticky top-28">
+                            <h3 class="text-2xl font-bold mb-4" data-lang-key="result_title">概算費用</h3>
+                            <div class="text-center my-8"><p class="text-5xl font-black accent-color">¥ <span id="total-cost">0</span></p><p class="text-gray-400 mt-2" data-lang-key="result_tax">(税込)</p></div>
+                            <p class="text-sm text-gray-400" data-lang-key="result_disclaimer">※ この金額は概算です。正式な金額は、詳細なヒアリング後にお伝えします。</p>
+                            <a href="contact.html" class="block text-center w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-md mt-6" data-lang-key="result_contact">この内容で問い合わせる</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-gray-900 text-gray-400 pt-12">
+        <!-- Footer content is the same as index.html -->
+    </footer>
+
+    <script>
+        const translations = {
+            ja: {
+                nav_home: "HOME", nav_services: "事業内容", nav_company: "会社概要", nav_estimate: "自動見積もり", nav_contact: "お問い合わせ",
+                page_title: "自動見積もり <span class='accent-color'>/ AUTO ESTIMATE</span>", page_subtitle: "ご希望のサービスを選択してください。概算費用をすぐに計算します。",
+                form_title: "お見積もり内容", form_service: "1. ご希望のサービス", form_service_select: "選択してください", form_service_cad: "3DCAD", form_service_mfg: "製造", form_service_import: "輸入", form_service_re: "リバースエンジニアリング",
+                form_complexity: "2. 規模・複雑度", form_complexity_s: "小", form_complexity_m: "中", form_complexity_l: "大 / 複雑",
+                result_title: "概算費用", result_tax: "(税込)", result_disclaimer: "※ この金額は概算です。正式な金額は、詳細なヒアリング後にお伝えします。", result_contact: "この内容で問い合わせる",
+            },
+            en: {
+                nav_home: "HOME", nav_services: "SERVICES", nav_company: "COMPANY", nav_estimate: "ESTIMATE", nav_contact: "CONTACT",
+                page_title: "AUTO ESTIMATE", page_subtitle: "Select your desired service to get an instant cost estimate.",
+                form_title: "Estimate Details", form_service: "1. Desired Service", form_service_select: "Please select", form_service_cad: "3DCAD", form_service_mfg: "Manufacturing", form_service_import: "Importing", form_service_re: "Reverse Engineering",
+                form_complexity: "2. Scale/Complexity", form_complexity_s: "Small", form_complexity_m: "Medium", form_complexity_l: "Large / Complex",
+                result_title: "Estimated Cost", result_tax: "(tax included)", result_disclaimer: "*This is an approximate amount. The final price will be provided after a detailed consultation.", result_contact: "Inquire with this content",
+            }
+        };
+        const langSwitcher = document.getElementById('lang-switcher');
+        let currentLang = 'ja';
+        function switchLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                if (translations[lang][key]) el.innerHTML = translations[lang][key];
+            });
+            langSwitcher.textContent = lang === 'ja' ? 'English' : '日本語';
+        }
+        langSwitcher.addEventListener('click', () => {
+            currentLang = currentLang === 'ja' ? 'en' : 'ja';
+            switchLanguage(currentLang);
+        });
+        
+        const form = document.getElementById('calculation-form');
+        const totalCostEl = document.getElementById('total-cost');
+        function calculateTotal() {
+            const serviceBasePrice = parseFloat(document.getElementById('service-category').value) || 0;
+            const complexityMultiplier = parseFloat(document.querySelector('input[name="complexity"]:checked').value) || 1.0;
+            const total = serviceBasePrice * complexityMultiplier;
+            totalCostEl.textContent = total.toLocaleString();
+        }
+        form.addEventListener('change', calculateTotal);
+        calculateTotal();
+        switchLanguage(currentLang);
+    </script>
+</body>
+</html>
