@@ -88,6 +88,38 @@
                     </div>
                 </div>
             </section>
+
+            <section id="import" class="container mx-auto px-6">
+                <div class="section-bg rounded-lg p-8 md:p-12">
+                    <h2 class="text-3xl font-bold mb-6" data-lang-key="import_title">輸入</h2>
+                     <div class="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <img src="https://placehold.co/400x300/777/FFF?text=Overseas+Parts" alt="Overseas Parts" class="rounded-md">
+                        <img src="https://placehold.co/400x300/777/FFF?text=Air+Cargo" alt="Air Cargo" class="rounded-md">
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-red-500 mb-4" data-lang-key="details">詳細</h3>
+                        <p class="text-gray-300 leading-relaxed" data-lang-key="import_detail_1">
+                            独自のネットワークを活かし、国内では入手困難な海外の高性能パーツや特殊部品を輸入・調達します。面倒な手続きもワンストップで代行いたします。
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="reverse-engineering" class="container mx-auto px-6">
+                <div class="section-bg rounded-lg p-8 md:p-12">
+                    <h2 class="text-3xl font-bold mb-6" data-lang-key="re_title">リバースエンジニアリング</h2>
+                     <div class="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <img src="https://placehold.co/400x300/888/FFF?text=3D+Scanner" alt="3D Scanner" class="rounded-md">
+                        <img src="https://placehold.co/400x300/888/FFF?text=Reproduction" alt="Reproduction" class="rounded-md">
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-red-500 mb-4" data-lang-key="details">詳細</h3>
+                        <p class="text-gray-300 leading-relaxed" data-lang-key="re_detail_1">
+                            メーカー廃盤となった部品や、図面の存在しない部品を3Dスキャナで精密に測定。取得したデータからCADモデルを作成し、復刻・再生産を可能にします。
+                        </p>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 
@@ -104,6 +136,8 @@
                 cad_title: "3DCAD", cad_detail_1: "<strong class='text-white'>フォームモデリング:</strong> クレイモデルのような直感的な操作で、複雑な曲面を持つ意匠デザインを作成します。", cad_detail_2: "<strong class='text-white'>ジェネレーティブデザイン:</strong> AIを活用し、設計要件（強度、重量、コストなど）を満たす最適な形状を自動で生成します。",
                 mfg_title: "製造", mfg_resin_title: "樹脂", mfg_resin_1: "<strong>3Dプリント:</strong> 試作品から最終製品まで、高精細な樹脂パーツを迅速に製造します。", mfg_resin_2: "<strong>ドライカーボン:</strong> オートクレーブ成形による高品質・高強度なドライカーボン製品を製作します。",
                 mfg_metal_title: "金属加工", mfg_metal_1: "<strong>溶接:</strong> TIG、MIGなど、材質に合わせた最適な溶接方法で精密な接合を行います。", mfg_metal_2: "<strong>レーザー・プレス:</strong> 高精度なレーザーカットとプレス加工で、複雑な形状の板金部品を製作します。", mfg_metal_3: "<strong>切削:</strong> 5軸マシニングセンタによる複雑な形状の削り出しに対応します。",
+                import_title: "輸入", import_detail_1: "独自のネットワークを活かし、国内では入手困難な海外の高性能パーツや特殊部品を輸入・調達します。面倒な手続きもワンストップで代行いたします。",
+                re_title: "リバースエンジニアリング", re_detail_1: "メーカー廃盤となった部品や、図面の存在しない部品を3Dスキャナで精密に測定。取得したデータからCADモデルを作成し、復刻・再生産を可能にします。",
             },
             en: {
                 nav_home: "HOME", nav_services: "SERVICES", nav_company: "COMPANY", nav_estimate: "ESTIMATE", nav_contact: "CONTACT",
@@ -112,6 +146,8 @@
                 cad_title: "3DCAD", cad_detail_1: "<strong class='text-white'>Form Modeling:</strong> Create intricate designs with complex surfaces through intuitive, clay-like modeling.", cad_detail_2: "<strong class='text-white'>Generative Design:</strong> Utilize AI to automatically generate optimal shapes that meet design requirements such as strength, weight, and cost.",
                 mfg_title: "Manufacturing", mfg_resin_title: "Resin", mfg_resin_1: "<strong>3D Printing:</strong> Rapidly produce high-definition resin parts, from prototypes to final products.", mfg_resin_2: "<strong>Dry Carbon:</strong> Fabricate high-quality, high-strength dry carbon products using autoclave molding.",
                 mfg_metal_title: "Metal Fabrication", mfg_metal_1: "<strong>Welding:</strong> Perform precise joining with optimal welding methods like TIG and MIG, tailored to the material.", mfg_metal_2: "<strong>Laser/Press:</strong> Produce complex sheet metal parts with high-precision laser cutting and press processing.", mfg_metal_3: "<strong>Machining:</strong> Handle complex shaping with 5-axis machining centers.",
+                import_title: "Importing", import_detail_1: "Leveraging our unique network, we import and source high-performance and special parts from overseas that are difficult to obtain domestically. We handle all tedious procedures in a one-stop service.",
+                re_title: "Reverse Engineering", re_detail_1: "We precisely measure discontinued or undocumented parts using a 3D scanner. From the acquired data, we create a CAD model, enabling reproduction and re-manufacturing.",
             }
         };
         const langSwitcher = document.getElementById('lang-switcher');
