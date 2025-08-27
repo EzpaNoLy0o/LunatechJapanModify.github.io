@@ -25,6 +25,7 @@
                 <a href="index.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_home">HOME</a>
                 <a href="services.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_services">事業内容</a>
                 <a href="company.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_company">会社概要</a>
+                <a href="products.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_products">商品ラインナップ</a>
                 <a href="estimate.html" class="text-red-500 font-bold" data-lang-key="nav_estimate">自動見積もり</a>
                 <a href="contact.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="nav_contact">お問い合わせ</a>
             </div>
@@ -61,9 +62,9 @@
                             <div>
                                 <label class="font-semibold block mb-2" data-lang-key="form_complexity">2. 規模・複雑度</label>
                                 <div class="grid grid-cols-3 gap-4">
-                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="1.0" class="sr-only" checked data-lang-key="form_complexity_s"> 小</label>
-                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="1.5" class="sr-only" data-lang-key="form_complexity_m"> 中</label>
-                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="2.5" class="sr-only" data-lang-key="form_complexity_l"> 大 / 複雑</label>
+                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="1.0" class="sr-only" checked> <span data-lang-key="form_complexity_s">小</span></label>
+                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="1.5" class="sr-only"> <span data-lang-key="form_complexity_m">中</span></label>
+                                    <label class="border border-gray-600 rounded-md p-3 text-center cursor-pointer has-[:checked]:bg-red-600"><input type="radio" name="complexity" value="2.5" class="sr-only"> <span data-lang-key="form_complexity_l">大 / 複雑</span></label>
                                 </div>
                             </div>
                         </form>
@@ -88,14 +89,14 @@
     <script>
         const translations = {
             ja: {
-                nav_home: "HOME", nav_services: "事業内容", nav_company: "会社概要", nav_estimate: "自動見積もり", nav_contact: "お問い合わせ",
+                nav_home: "HOME", nav_services: "事業内容", nav_company: "会社概要", nav_products: "商品ラインナップ", nav_estimate: "自動見積もり", nav_contact: "お問い合わせ",
                 page_title: "自動見積もり <span class='accent-color'>/ AUTO ESTIMATE</span>", page_subtitle: "ご希望のサービスを選択してください。概算費用をすぐに計算します。",
                 form_title: "お見積もり内容", form_service: "1. ご希望のサービス", form_service_select: "選択してください", form_service_cad: "3DCAD", form_service_mfg: "製造", form_service_import: "輸入", form_service_re: "リバースエンジニアリング",
                 form_complexity: "2. 規模・複雑度", form_complexity_s: "小", form_complexity_m: "中", form_complexity_l: "大 / 複雑",
                 result_title: "概算費用", result_tax: "(税込)", result_disclaimer: "※ この金額は概算です。正式な金額は、詳細なヒアリング後にお伝えします。", result_contact: "この内容で問い合わせる",
             },
             en: {
-                nav_home: "HOME", nav_services: "SERVICES", nav_company: "COMPANY", nav_estimate: "ESTIMATE", nav_contact: "CONTACT",
+                nav_home: "HOME", nav_services: "SERVICES", nav_company: "COMPANY", nav_products: "PRODUCTS", nav_estimate: "ESTIMATE", nav_contact: "CONTACT",
                 page_title: "AUTO ESTIMATE", page_subtitle: "Select your desired service to get an instant cost estimate.",
                 form_title: "Estimate Details", form_service: "1. Desired Service", form_service_select: "Please select", form_service_cad: "3DCAD", form_service_mfg: "Manufacturing", form_service_import: "Importing", form_service_re: "Reverse Engineering",
                 form_complexity: "2. Scale/Complexity", form_complexity_s: "Small", form_complexity_m: "Medium", form_complexity_l: "Large / Complex",

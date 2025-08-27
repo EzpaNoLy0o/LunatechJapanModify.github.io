@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品ラインナップ - Lunatech JAPAN Modify</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #F3F4F6; }
+        .accent-color { color: #EF4444; }
+        .section-bg { background-color: #1F2937; }
+        .card-bg { background-color: #1F2937; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div><img src="b6aa69b769dd123c6625d33a737e2a5f.jpg" alt="Logo" class="h-12 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/200x50/111827/FFFFFF?text=Lunatech+JAPAN+Modify';"></div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="index.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_home">HOME</a>
+                <a href="services.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_services">事業内容</a>
+                <a href="company.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_company">会社概要</a>
+                <a href="products.html" class="text-red-500 font-bold" data-lang-key="nav_products">商品ラインナップ</a>
+                <a href="estimate.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_estimate">自動見積もり</a>
+                <a href="contact.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="nav_contact">お問い合わせ</a>
+            </div>
+             <div class="flex items-center">
+                 <button id="lang-switcher" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md">English</button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="bg-gray-900 py-16 md:py-20">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-5xl font-black text-white uppercase" data-lang-key="page_title">商品ラインナップ <span class="accent-color">/ PRODUCTS</span></h1>
+                <p class="mt-4 text-lg text-gray-300" data-lang-key="page_subtitle">Lunatech Japan Modifyが開発・製造するオリジナル商品です。</p>
+            </div>
+        </section>
+
+        <!-- 商品リスト -->
+        <div class="py-12 md:py-20">
+            <div class="container mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                    <!-- 商品カード 1 -->
+                    <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
+                        <img src="L66_EGE3.jpg" class="w-full h-56 object-cover" alt="エンプラ製サイドミラー" onerror="this.onerror=null;this.src='https://placehold.co/600x400/333/FFF?text=Side+Mirror';">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_1_name">LJM-エンプラ製サイドミラー</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="product_1_desc">完全車種専用設計。主に開発時に製作、未ラインナップ車種でも1台から開発、製作可能。(要相談、お気軽にお問い合わせください)</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl font-bold accent-color" data-lang-key="product_1_price">¥77,000~</span>
+                                <a href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="details_btn">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品カード 2 -->
+                    <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
+                        <img src="https://placehold.co/600x400/333/FFF?text=Alignment+Stand" class="w-full h-56 object-cover" alt="アライメントスタンド">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_2_name">LJM-アライメントスタンド</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="product_2_desc">DIYでのアライメント調整に最適。セッティング後の調整が容易で、高精度な測定が可能です。サーキットでの現場調整などにも使用いただけます。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl font-bold accent-color" data-lang-key="product_2_price">¥44,000~</span>
+                                <a href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="details_btn">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品カード 3 -->
+                    <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
+                        <img src="https://placehold.co/600x400/333/FFF?text=Dry+Carbon+Mirror" class="w-full h-56 object-cover" alt="ドライカーボンサイドミラー">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_3_name">LJM-フルドライカーボンコンポジットサイドミラー</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="product_3_desc">LJMミラーのフラグシップモデル。完全自社開発したコンポジット製法により比較的に安価に、超軽量、高剛性なモデル。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl font-bold text-gray-500" data-lang-key="product_3_price">準備中</span>
+                                <a href="#" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-md cursor-not-allowed" data-lang-key="details_btn">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品カード 4 -->
+                    <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
+                        <img src="https://placehold.co/600x400/333/FFF?text=LJM-3D+Tokiwa" class="w-full h-56 object-cover" alt="LJM-3D常盤">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_4_name">LJM-3D常盤</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="product_4_desc">最新の3Dプリント技術を駆使したカスタムパーツ。詳細はお問い合わせください。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl font-bold accent-color" data-lang-key="product_4_price">要見積もり</span>
+                                <a href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="details_btn">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品カード 5 -->
+                    <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
+                        <img src="https://placehold.co/600x400/333/FFF?text=GT+Wing+Stay" class="w-full h-56 object-cover" alt="GTウィングステー">
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_5_name">LJM-ドライカーボンコンポジットGTウィングステー</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="product_5_desc">自社開発したコンポジット製法により比較的安価で超軽量な3D中空形状GTウィングステー。サイズなどの変更やワンオフモデルもお気軽にお問い合わせください。</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-2xl font-bold text-gray-500" data-lang-key="product_5_price">準備中</span>
+                                <a href="#" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-md cursor-not-allowed" data-lang-key="details_btn">詳細を見る</a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-gray-900 text-gray-400 pt-12">
+        <!-- Footer content -->
+    </footer>
+
+    <script>
+        const translations = {
+            ja: {
+                nav_home: "HOME", nav_services: "事業内容", nav_company: "会社概要", nav_products: "商品ラインナップ", nav_estimate: "自動見積もり", nav_contact: "お問い合わせ",
+                page_title: "商品ラインナップ <span class='accent-color'>/ PRODUCTS</span>",
+                page_subtitle: "Lunatech Japan Modifyが開発・製造するオリジナル商品です。",
+                details_btn: "詳細を見る",
+                product_1_name: "LJM-エンプラ製サイドミラー",
+                product_1_desc: "完全車種専用設計。主に開発時に製作、未ラインナップ車種でも1台から開発、製作可能。(要相談、お気軽にお問い合わせください)",
+                product_1_price: "¥77,000~",
+                product_2_name: "LJM-アライメントスタンド",
+                product_2_desc: "DIYでのアライメント調整に最適。セッティング後の調整が容易で、高精度な測定が可能です。サーキットでの現場調整などにも使用いただけます。",
+                product_2_price: "¥44,000~",
+                product_3_name: "LJM-フルドライカーボンコンポジットサイドミラー",
+                product_3_desc: "LJMミラーのフラグシップモデル。完全自社開発したコンポジット製法により比較的に安価に、超軽量、高剛性なモデル。",
+                product_3_price: "準備中",
+                product_4_name: "LJM-3D常盤",
+                product_4_desc: "最新の3Dプリント技術を駆使したカスタムパーツ。詳細はお問い合わせください。",
+                product_4_price: "要見積もり",
+                product_5_name: "LJM-ドライカーボンコンポジットGTウィングステー",
+                product_5_desc: "自社開発したコンポジット製法により比較的安価で超軽量な3D中空形状GTウィングステー。サイズなどの変更やワンオフモデルもお気軽にお問い合わせください。",
+                product_5_price: "準備中",
+            },
+            en: {
+                nav_home: "HOME", nav_services: "SERVICES", nav_company: "COMPANY", nav_products: "PRODUCTS", nav_estimate: "ESTIMATE", nav_contact: "CONTACT",
+                page_title: "PRODUCTS",
+                page_subtitle: "Original products developed and manufactured by Lunatech Japan Modify.",
+                details_btn: "View Details",
+                product_1_name: "LJM - Engineering Plastic Side Mirror",
+                product_1_desc: "A fully vehicle-specific design. Primarily produced during development, can be developed and manufactured from a single unit even for unlisted car models. (Consultation required, please feel free to inquire)",
+                product_1_price: "$500~",
+                product_2_name: "LJM - Alignment Stand",
+                product_2_desc: "Ideal for DIY alignment. Easy to adjust after setup for high-precision measurements. Can also be used for on-site adjustments at the circuit.",
+                product_2_price: "$300~",
+                product_3_name: "LJM - Full Dry Carbon Composite Side Mirror",
+                product_3_desc: "The flagship model of LJM mirrors. A relatively affordable, ultra-lightweight, and high-rigidity model thanks to our fully in-house developed composite manufacturing method.",
+                product_3_price: "Coming Soon",
+                product_4_name: "LJM-3D Tokiwa",
+                product_4_desc: "Custom parts made with the latest 3D printing technology. Please inquire for details.",
+                product_4_price: "Quote required",
+                product_5_name: "LJM - Dry Carbon Composite GT Wing Stay",
+                product_5_desc: "A relatively affordable and ultra-lightweight 3D hollow GT wing stay made with our in-house developed composite manufacturing method. Please feel free to inquire about size changes or one-off models.",
+                product_5_price: "Coming Soon",
+            }
+        };
+        const langSwitcher = document.getElementById('lang-switcher');
+        let currentLang = 'ja';
+        function switchLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                if (translations[lang][key]) el.innerHTML = translations[lang][key];
+            });
+            langSwitcher.textContent = lang === 'ja' ? 'English' : '日本語';
+        }
+        langSwitcher.addEventListener('click', () => {
+            currentLang = currentLang === 'ja' ? 'en' : 'ja';
+            switchLanguage(currentLang);
+        });
+        switchLanguage(currentLang);
+    </script>
+</body>
+</html>

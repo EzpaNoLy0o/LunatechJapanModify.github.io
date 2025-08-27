@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商品ラインナップ - Lunatech JAPAN Modify</title>
+    <title>Lunatech JAPAN Modify - トップページ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,9 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #111827; color: #F3F4F6; }
-        .accent-color { color: #EF4444; }
-        .section-bg { background-color: #1F2937; }
+        .hero-bg { background-image: url('https://placehold.co/1920x1080/000000/FFFFFF?text=AI+TECHNOLOGY'); background-size: cover; background-position: center; }
         .card-bg { background-color: #1F2937; }
+        .accent-color { color: #EF4444; }
     </style>
 </head>
 <body class="antialiased">
@@ -22,150 +22,129 @@
         <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div><img src="b6aa69b769dd123c6625d33a737e2a5f.jpg" alt="Logo" class="h-12 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/200x50/111827/FFFFFF?text=Lunatech+JAPAN+Modify';"></div>
             <div class="hidden md:flex items-center space-x-8">
-                <a href="index.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_home">HOME</a>
+                <a href="index.html" class="text-red-500 font-bold" data-lang-key="nav_home">HOME</a>
                 <a href="services.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_services">事業内容</a>
                 <a href="company.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_company">会社概要</a>
-                <a href="products.html" class="text-red-500 font-bold" data-lang-key="nav_products">商品ラインナップ</a>
+                <a href="products.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_products">商品ラインナップ</a>
                 <a href="estimate.html" class="text-gray-300 hover:text-red-500" data-lang-key="nav_estimate">自動見積もり</a>
                 <a href="contact.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="nav_contact">お問い合わせ</a>
             </div>
-             <div class="flex items-center">
+            <div class="flex items-center">
                  <button id="lang-switcher" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md">English</button>
             </div>
         </nav>
     </header>
 
     <main>
-        <section class="bg-gray-900 py-16 md:py-20">
-            <div class="container mx-auto px-6 text-center">
-                <h1 class="text-4xl md:text-5xl font-black text-white uppercase" data-lang-key="page_title">商品ラインナップ <span class="accent-color">/ PRODUCTS</span></h1>
-                <p class="mt-4 text-lg text-gray-300" data-lang-key="page_subtitle">Lunatech Japan Modifyが開発・製造するオリジナル商品です。</p>
+        <section class="hero-bg h-[60vh] md:h-[80vh] flex items-center justify-center relative">
+            <div class="absolute inset-0 bg-black opacity-60"></div>
+            <div class="text-center z-10 px-4">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-wider leading-tight" data-lang-key="hero_title">AIを駆使した<br class="md:hidden"> <span class="accent-color">開発</span>、製造</h1>
+                <p class="mt-4 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto" data-lang-key="hero_subtitle">AI技術と最先端の製造プロセスを融合させ、次世代の製品を創造します。</p>
             </div>
         </section>
 
-        <!-- 商品リスト -->
-        <div class="py-12 md:py-20">
+        <section id="services" class="py-20 bg-gray-900">
             <div class="container mx-auto px-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-                    <!-- 商品カード 1 -->
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12" data-lang-key="services_title">OUR SERVICES<span class="block w-20 h-1 bg-red-600 mx-auto mt-2"></span></h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
-                        <img src="L66_EGE3.jpg" class="w-full h-56 object-cover" alt="エンプラ製サイドミラー" onerror="this.onerror=null;this.src='https://placehold.co/600x400/333/FFF?text=Side+Mirror';">
+                        <img src="https://placehold.co/600x400/333/FFF?text=3DCAD" class="w-full h-48 object-cover" alt="3DCAD">
                         <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_1_name">LJM-エンプラ製サイドミラー</h3>
-                            <p class="text-gray-400 mb-4" data-lang-key="product_1_desc">完全車種専用設計。主に開発時に製作、未ラインナップ車種でも1台から開発、製作可能。(要相談、お気軽にお問い合わせください)</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-2xl font-bold accent-color" data-lang-key="product_1_price">¥77,000~</span>
-                                <a href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="details_btn">詳細を見る</a>
-                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="service_card_1_title">3DCAD</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="service_card_1_desc">ジェネレーティブデザインやフォームモデリングで最適な形状を設計します。</p>
+                            <a href="services.html#3dcad" class="text-red-500 hover:text-red-400 font-semibold" data-lang-key="learn_more">詳しく見る &rarr;</a>
                         </div>
                     </div>
-
-                    <!-- 商品カード 2 -->
                     <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
-                        <img src="https://placehold.co/600x400/333/FFF?text=Alignment+Stand" class="w-full h-56 object-cover" alt="アライメントスタンド">
+                        <img src="https://placehold.co/600x400/333/FFF?text=Manufacturing" class="w-full h-48 object-cover" alt="製造">
                         <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_2_name">LJM-アライメントスタンド</h3>
-                            <p class="text-gray-400 mb-4" data-lang-key="product_2_desc">DIYでのアライメント調整に最適。セッティング後の調整が容易で、高精度な測定が可能です。サーキットでの現場調整などにも使用いただけます。</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-2xl font-bold accent-color" data-lang-key="product_2_price">¥44,000~</span>
-                                <a href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="details_btn">詳細を見る</a>
-                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="service_card_2_title">製造</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="service_card_2_desc">3Dプリント、ドライカーボン、金属加工まで幅広く対応します。</p>
+                            <a href="services.html#manufacturing" class="text-red-500 hover:text-red-400 font-semibold" data-lang-key="learn_more">詳しく見る &rarr;</a>
                         </div>
                     </div>
-
-                    <!-- 商品カード 3 -->
                     <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
-                        <img src="https://placehold.co/600x400/333/FFF?text=Dry+Carbon+Mirror" class="w-full h-56 object-cover" alt="ドライカーボンサイドミラー">
+                        <img src="https://placehold.co/600x400/333/FFF?text=Import" class="w-full h-48 object-cover" alt="輸入">
                         <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_3_name">LJM-フルドライカーボンコンポジットサイドミラー</h3>
-                            <p class="text-gray-400 mb-4" data-lang-key="product_3_desc">LJMミラーのフラグシップモデル。完全自社開発したコンポジット製法により比較的に安価に、超軽量、高剛性なモデル。</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-2xl font-bold text-gray-500" data-lang-key="product_3_price">準備中</span>
-                                <a href="#" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-md cursor-not-allowed" data-lang-key="details_btn">詳細を見る</a>
-                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="service_card_3_title">輸入</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="service_card_3_desc">独自のネットワークで海外の高性能・特殊部品を調達します。</p>
+                            <a href="services.html#import" class="text-red-500 hover:text-red-400 font-semibold" data-lang-key="learn_more">詳しく見る &rarr;</a>
                         </div>
                     </div>
-
-                    <!-- 商品カード 4 -->
                     <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
-                        <img src="https://placehold.co/600x400/333/FFF?text=LJM-3D+Tokiwa" class="w-full h-56 object-cover" alt="LJM-3D常盤">
+                        <img src="https://placehold.co/600x400/333/FFF?text=Reverse+Engineering" class="w-full h-48 object-cover" alt="リバースエンジニアリング">
                         <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_4_name">LJM-3D常盤</h3>
-                            <p class="text-gray-400 mb-4" data-lang-key="product_4_desc">最新の3Dプリント技術を駆使したカスタムパーツ。詳細はお問い合わせください。</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-2xl font-bold accent-color" data-lang-key="product_4_price">要見積もり</span>
-                                <a href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md" data-lang-key="details_btn">詳細を見る</a>
-                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-lang-key="service_card_4_title">リバースエンジニアリング</h3>
+                            <p class="text-gray-400 mb-4" data-lang-key="service_card_4_desc">図面のない部品や廃盤部品を3Dデータ化し、復刻します。</p>
+                            <a href="services.html#reverse-engineering" class="text-red-500 hover:text-red-400 font-semibold" data-lang-key="learn_more">詳しく見る &rarr;</a>
                         </div>
                     </div>
-
-                    <!-- 商品カード 5 -->
-                    <div class="card-bg rounded-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 shadow-lg">
-                        <img src="https://placehold.co/600x400/333/FFF?text=GT+Wing+Stay" class="w-full h-56 object-cover" alt="GTウィングステー">
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2" data-lang-key="product_5_name">LJM-ドライカーボンコンポジットGTウィングステー</h3>
-                            <p class="text-gray-400 mb-4" data-lang-key="product_5_desc">自社開発したコンポジット製法により比較的安価で超軽量な3D中空形状GTウィングステー。サイズなどの変更やワンオフモデルもお気軽にお問い合わせください。</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-2xl font-bold text-gray-500" data-lang-key="product_5_price">準備中</span>
-                                <a href="#" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-md cursor-not-allowed" data-lang-key="details_btn">詳細を見る</a>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
-        </div>
-
+        </section>
     </main>
 
     <footer class="bg-gray-900 text-gray-400 pt-12">
-        <!-- Footer content -->
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <img src="b6aa69b769dd123c6625d33a737e2a5f.jpg" alt="Logo" class="h-12 w-auto mb-4" onerror="this.onerror=null;this.src='https://placehold.co/200x50/111827/FFFFFF?text=Lunatech';">
+                    <p>〒669-4141<br>兵庫県丹波市春日町黒井2041-1</p>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-lg mb-4" data-lang-key="footer_sitemap">サイトマップ</h3>
+                    <ul>
+                        <li class="mb-2"><a href="index.html" class="hover:text-red-500" data-lang-key="nav_home">HOME</a></li>
+                        <li class="mb-2"><a href="services.html" class="hover:text-red-500" data-lang-key="nav_services">事業内容</a></li>
+                        <li class="mb-2"><a href="company.html" class="hover:text-red-500" data-lang-key="nav_company">会社概要</a></li>
+                        <li class="mb-2"><a href="products.html" class="hover:text-red-500" data-lang-key="nav_products">商品ラインナップ</a></li>
+                        <li class="mb-2"><a href="estimate.html" class="hover:text-red-500" data-lang-key="nav_estimate">自動見積もり</a></li>
+                        <li class="mb-2"><a href="contact.html" class="hover:text-red-500" data-lang-key="nav_contact">お問い合わせ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-lg mb-4" data-lang-key="nav_contact">お問い合わせ</h3>
+                    <p>TEL: 090-8386-6758</p>
+                    <p>Email: info@example.com</p>
+                    <div class="mt-4">
+                        <h4 class="text-white font-semibold mb-2" data-lang-key="footer_follow">Follow Us</h4>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-2xl hover:text-red-500"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="text-2xl hover:text-red-500"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="text-2xl hover:text-red-500"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="text-2xl hover:text-red-500"><i class="fab fa-line"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-black py-4"><p class="text-center text-sm">&copy; 2025 Lunatech JAPAN Modify. All Rights Reserved.</p></div>
     </footer>
 
     <script>
         const translations = {
             ja: {
                 nav_home: "HOME", nav_services: "事業内容", nav_company: "会社概要", nav_products: "商品ラインナップ", nav_estimate: "自動見積もり", nav_contact: "お問い合わせ",
-                page_title: "商品ラインナップ <span class='accent-color'>/ PRODUCTS</span>",
-                page_subtitle: "Lunatech Japan Modifyが開発・製造するオリジナル商品です。",
-                details_btn: "詳細を見る",
-                product_1_name: "LJM-エンプラ製サイドミラー",
-                product_1_desc: "完全車種専用設計。主に開発時に製作、未ラインナップ車種でも1台から開発、製作可能。(要相談、お気軽にお問い合わせください)",
-                product_1_price: "¥77,000~",
-                product_2_name: "LJM-アライメントスタンド",
-                product_2_desc: "DIYでのアライメント調整に最適。セッティング後の調整が容易で、高精度な測定が可能です。サーキットでの現場調整などにも使用いただけます。",
-                product_2_price: "¥44,000~",
-                product_3_name: "LJM-フルドライカーボンコンポジットサイドミラー",
-                product_3_desc: "LJMミラーのフラグシップモデル。完全自社開発したコンポジット製法により比較的に安価に、超軽量、高剛性なモデル。",
-                product_3_price: "準備中",
-                product_4_name: "LJM-3D常盤",
-                product_4_desc: "最新の3Dプリント技術を駆使したカスタムパーツ。詳細はお問い合わせください。",
-                product_4_price: "要見積もり",
-                product_5_name: "LJM-ドライカーボンコンポジットGTウィングステー",
-                product_5_desc: "自社開発したコンポジット製法により比較的安価で超軽量な3D中空形状GTウィングステー。サイズなどの変更やワンオフモデルもお気軽にお問い合わせください。",
-                product_5_price: "準備中",
+                hero_title: 'AIを駆使した<br class="md:hidden"> <span class="accent-color">開発</span>、製造',
+                hero_subtitle: "AI技術と最先端の製造プロセスを融合させ、次世代の製品を創造します。",
+                services_title: "OUR SERVICES",
+                service_card_1_title: "3DCAD", service_card_1_desc: "ジェネレーティブデザインやフォームモデリングで最適な形状を設計します。",
+                service_card_2_title: "製造", service_card_2_desc: "3Dプリント、ドライカーボン、金属加工まで幅広く対応します。",
+                service_card_3_title: "輸入", service_card_3_desc: "独自のネットワークで海外の高性能・特殊部品を調達します。",
+                service_card_4_title: "リバースエンジニアリング", service_card_4_desc: "図面のない部品や廃盤部品を3Dデータ化し、復刻します。",
+                learn_more: "詳しく見る &rarr;", footer_sitemap: "サイトマップ", footer_follow: "Follow Us",
             },
             en: {
                 nav_home: "HOME", nav_services: "SERVICES", nav_company: "COMPANY", nav_products: "PRODUCTS", nav_estimate: "ESTIMATE", nav_contact: "CONTACT",
-                page_title: "PRODUCTS",
-                page_subtitle: "Original products developed and manufactured by Lunatech Japan Modify.",
-                details_btn: "View Details",
-                product_1_name: "LJM - Engineering Plastic Side Mirror",
-                product_1_desc: "A fully vehicle-specific design. Primarily produced during development, can be developed and manufactured from a single unit even for unlisted car models. (Consultation required, please feel free to inquire)",
-                product_1_price: "$500~",
-                product_2_name: "LJM - Alignment Stand",
-                product_2_desc: "Ideal for DIY alignment. Easy to adjust after setup for high-precision measurements. Can also be used for on-site adjustments at the circuit.",
-                product_2_price: "$300~",
-                product_3_name: "LJM - Full Dry Carbon Composite Side Mirror",
-                product_3_desc: "The flagship model of LJM mirrors. A relatively affordable, ultra-lightweight, and high-rigidity model thanks to our fully in-house developed composite manufacturing method.",
-                product_3_price: "Coming Soon",
-                product_4_name: "LJM-3D Tokiwa",
-                product_4_desc: "Custom parts made with the latest 3D printing technology. Please inquire for details.",
-                product_4_price: "Quote required",
-                product_5_name: "LJM - Dry Carbon Composite GT Wing Stay",
-                product_5_desc: "A relatively affordable and ultra-lightweight 3D hollow GT wing stay made with our in-house developed composite manufacturing method. Please feel free to inquire about size changes or one-off models.",
-                product_5_price: "Coming Soon",
+                hero_title: 'AI-DRIVEN <span class="accent-color">DEVELOPMENT</span><br class="md:hidden"> & MANUFACTURING',
+                hero_subtitle: "We create next-generation products by fusing AI technology with advanced manufacturing processes.",
+                services_title: "OUR SERVICES",
+                service_card_1_title: "3DCAD", service_card_1_desc: "Designing optimal shapes with generative design and form modeling.",
+                service_card_2_title: "Manufacturing", service_card_2_desc: "Covering a wide range from 3D printing and dry carbon to metal fabrication.",
+                service_card_3_title: "Importing", service_card_3_desc: "Sourcing high-performance and special parts from overseas through our unique network.",
+                service_card_4_title: "Reverse Engineering", service_card_4_desc: "Recreating discontinued parts by converting them into 3D data.",
+                learn_more: "Learn More &rarr;", footer_sitemap: "Sitemap", footer_follow: "Follow Us",
             }
         };
         const langSwitcher = document.getElementById('lang-switcher');
