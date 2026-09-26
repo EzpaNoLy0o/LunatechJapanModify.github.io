@@ -84,6 +84,19 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <section id="download" class="anchor py-14 bg-gray-900">
 <div class="container mx-auto px-6 max-w-6xl">
 <h2 class="text-3xl md:text-4xl font-black mb-8"><span class="text-red-500">01.</span> DOWNLOAD</h2>
+<div class="mb-8 rounded-xl border-2 border-yellow-500/70 bg-yellow-950/20 p-6 md:p-7">
+<div class="flex gap-4 items-start">
+<i class="fa-solid fa-triangle-exclamation text-yellow-400 text-3xl mt-1"></i>
+<div>
+<div class="text-yellow-300 font-black text-sm mb-1">初回インストール時の重要事項</div>
+<h3 class="text-xl md:text-2xl font-black mb-3">Setup.exeの後にCFD環境セットアップが必要です</h3>
+<p class="text-gray-300 leading-relaxed">CFD計算には <strong class="text-white">WSL2 / Ubuntu / OpenFOAM</strong> を使用します。初めて使用するPCでは、初回セットアップ時にインターネット接続・管理者権限が必要になり、Windowsの再起動が必要になる場合があります。</p>
+<div class="mt-4 bg-gray-950/70 border border-yellow-800/50 rounded-lg p-4 text-sm text-yellow-100/90 leading-relaxed">
+<strong>再起動した場合：</strong> Windows起動後にCFD環境セットアップをもう一度実行してください。UEFI / BIOSのCPU仮想化機能が無効な場合は、先に仮想化を有効にする必要があります。
+</div>
+</div>
+</div>
+</div>
 <div class="grid lg:grid-cols-[1.35fr_.65fr] gap-7">
 <div class="panel rounded-xl p-7 md:p-9">
 <div class="flex flex-col sm:flex-row gap-5 justify-between items-start">
@@ -191,6 +204,16 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">02</div><h3 class="font-black mt-3">インストール</h3><p class="text-gray-400 text-sm mt-2">Setup.exeを実行し、画面の案内に従います。</p></div>
 <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">03</div><h3 class="font-black mt-3">CFD環境確認</h3><p class="text-gray-400 text-sm mt-2">WSL2 / Ubuntu / OpenFOAMの状態を確認・セットアップします。</p></div>
 <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">04</div><h3 class="font-black mt-3">起動・解析</h3><p class="text-gray-400 text-sm mt-2">LJM.CFDを起動し、取扱説明書の最短手順に従って解析します。</p></div>
+</div>
+<div class="mt-6 rounded-xl border-2 border-yellow-500/60 bg-yellow-950/20 p-6 md:p-7">
+<h3 class="font-black text-xl mb-4 text-yellow-300"><i class="fa-solid fa-screwdriver-wrench mr-2"></i>初回CFD環境セットアップ</h3>
+<div class="grid md:grid-cols-4 gap-4 text-sm">
+<div class="bg-gray-950/70 rounded-lg p-4"><div class="font-black text-white mb-1">1. Setup.exe</div><p class="text-gray-400">LJM.CFD本体をWindowsへインストールします。</p></div>
+<div class="bg-gray-950/70 rounded-lg p-4"><div class="font-black text-white mb-1">2. CFD環境セットアップ</div><p class="text-gray-400">WSL2 / Ubuntu / OpenFOAMの状態を確認し、必要な環境を導入します。</p></div>
+<div class="bg-gray-950/70 rounded-lg p-4"><div class="font-black text-white mb-1">3. 必要なら再起動</div><p class="text-gray-400">WSL2初回導入時などはWindows再起動が必要になる場合があります。</p></div>
+<div class="bg-gray-950/70 rounded-lg p-4"><div class="font-black text-white mb-1">4. 再度セットアップ</div><p class="text-gray-400">再起動後、CFD環境セットアップをもう一度実行して完了させます。</p></div>
+</div>
+<p class="mt-4 text-yellow-100/90 text-sm leading-relaxed"><strong>注意：</strong> 初回環境構築中はインターネット接続を切断しないでください。管理者権限を求められた場合は内容を確認して許可してください。</p>
 </div>
 <div class="mt-6 panel rounded-xl p-6">
 <h3 class="font-black mb-2"><i class="fa-solid fa-shield-halved mr-2 text-red-500"></i>Windows SmartScreenについて</h3>
