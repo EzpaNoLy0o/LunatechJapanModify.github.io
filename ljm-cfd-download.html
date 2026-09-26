@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="LJM.CFD.Beta. 0.6.2.3 公式ダウンロードページ">
+<title>LJM.CFD Download - Lunatech JAPAN Modify</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
+.accent{color:#EF4444}.panel{background:linear-gradient(145deg,rgba(31,41,55,.98),rgba(17,24,39,.98));border:1px solid #374151}
+.anchor{scroll-margin-top:96px}.disabled-download{opacity:.55;cursor:not-allowed}
+.x-feedback-float{position:fixed;right:18px;bottom:22px;z-index:9999;display:inline-flex;align-items:center;gap:10px;padding:13px 17px;border-radius:9999px;background:#000;color:#fff;border:1px solid #4B5563;box-shadow:0 10px 30px rgba(0,0,0,.45);font-weight:800}
+.x-feedback-float:hover{border-color:#EF4444;transform:translateY(-2px)}
+@media(max-width:640px){.x-feedback-float{right:14px;bottom:14px;width:54px;height:54px;padding:0;justify-content:center;border-radius:50%}.x-feedback-float .x-label{display:none}}
+</style>
+</head>
+<body class="antialiased">
+
+<header class="bg-gray-900/95 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-800">
+<nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+<a href="index.html"><img src="b6aa69b769dd123c6625d33a737e2a5f.jpg" alt="Lunatech JAPAN Modify" class="h-12 w-auto"></a>
+<div class="hidden md:flex items-center space-x-6">
+<a href="index.html" class="text-gray-300 hover:text-red-500">HOME</a>
+<a href="ljm-cfd.html" class="text-gray-300 hover:text-red-500">LJM CFD</a>
+<a href="ljm-cfd-download.html" class="text-red-500 font-bold">DOWNLOAD</a>
+<a href="ljm-cfd-docs.html" class="text-gray-300 hover:text-red-500">DOCUMENTS</a>
+<a href="contact.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md">お問い合わせ</a>
+</div>
+</nav>
+</header>
+
+<main>
+<section class="bg-gray-950 py-16 md:py-20 border-b border-gray-800">
+<div class="container mx-auto px-6 max-w-6xl">
+<a href="ljm-cfd.html" class="text-red-400 hover:text-red-300 text-sm"><i class="fa-solid fa-arrow-left mr-2"></i>LJM CFD トップへ戻る</a>
+<div class="mt-6 grid lg:grid-cols-[1fr_auto] gap-8 items-end">
+<div>
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/50 border border-red-800 text-red-300 text-xs font-bold mb-4"><i class="fa-solid fa-flask"></i> DEVELOPMENT BETA / NOT FINAL</div>
+<h1 class="text-4xl md:text-6xl font-black">LJM<span class="accent">.CFD</span> DOWNLOAD</h1>
+<p class="mt-3 text-xl text-gray-400">LJM.CFD.Beta. 0.6.2.3 - 公式配布ページ</p>
+</div>
+<div class="text-left lg:text-right">
+<div class="text-sm text-gray-500">価格</div><div class="text-3xl font-black text-green-400">FREE</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="py-10 bg-red-950/20 border-b border-red-900/40">
+<div class="container mx-auto px-6 max-w-6xl">
+<div class="flex gap-4 items-start">
+<i class="fa-solid fa-triangle-exclamation text-red-500 text-3xl mt-1"></i>
+<div>
+<h2 class="font-black text-xl mb-2">ダウンロード前の重要事項</h2>
+<p class="text-gray-300 leading-relaxed">本ソフトは現在開発中の未完成Beta版です。すべてのデータ形式での完全動作、KN5形式の完全互換、計算結果の正確性を保証するものではありません。解析値は参考値・傾向確認用として使用してください。また、作者の事前許可のない2次配布は禁止しています。</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="py-10">
+<div class="container mx-auto px-6 max-w-6xl">
+<nav class="panel rounded-xl p-6">
+<h2 class="font-black text-lg mb-4"><i class="fa-solid fa-list mr-2 text-red-500"></i>目次</h2>
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+<a href="#download" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">01. ダウンロード</a>
+<a href="#release" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">02. リリース情報</a>
+<a href="#requirements" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">03. PCスペック</a>
+<a href="#environment" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">04. 必要環境</a>
+<a href="#install" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">05. インストール</a>
+<a href="#docs" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">06. 取扱説明書</a>
+<a href="#terms" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">07. 利用上の注意</a>
+<a href="#support" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">08. フィードバック</a>
+</div>
+</nav>
+</div>
+</section>
+
+<section id="download" class="anchor py-14 bg-gray-900">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl md:text-4xl font-black mb-8"><span class="text-red-500">01.</span> DOWNLOAD</h2>
+<div class="grid lg:grid-cols-[1.35fr_.65fr] gap-7">
+<div class="panel rounded-xl p-7 md:p-9">
+<div class="flex flex-col sm:flex-row gap-5 justify-between items-start">
+<div>
+<div class="text-xs font-bold text-red-400 mb-2">WINDOWS INSTALLER</div>
+<h3 class="text-2xl md:text-3xl font-black">LJM_CFD_Beta_0.6.2.3_Setup.exe</h3>
+<p class="text-gray-400 mt-2">Windows 10 / 11 64-bit</p>
+</div>
+<span class="px-3 py-2 rounded-full bg-yellow-950/50 border border-yellow-700 text-yellow-300 text-sm font-bold">公開準備中</span>
+</div>
+<div class="mt-7 p-5 rounded-lg bg-gray-900 border border-gray-700">
+<label class="flex gap-3 items-start text-sm text-gray-300 mb-3"><input id="agree-beta" type="checkbox" class="mt-1 accent-red-600"><span>本ソフトが未完成Beta版であり、計算結果は参考値であることを確認しました。</span></label>
+<label class="flex gap-3 items-start text-sm text-gray-300"><input id="agree-redistribution" type="checkbox" class="mt-1 accent-red-600"><span>作者の事前許可なく2次配布しないことを確認しました。</span></label>
+</div>
+<button id="installer-button" disabled class="disabled-download mt-6 w-full bg-red-600 text-white font-black py-4 px-6 rounded-md text-lg"><i class="fa-solid fa-download mr-2"></i>Setup.exe は現在公開準備中です</button>
+<p class="mt-4 text-xs text-gray-500">正式なSetup.exe公開後、このボタンを直接ダウンロードに切り替えます。現在GitHub Releasesには公開ファイルがありません。</p>
+</div>
+
+<div class="space-y-5">
+<div class="panel rounded-xl p-6">
+<div class="text-gray-500 text-xs mb-1">CURRENT VERSION</div><div class="font-black text-xl">Beta 0.6.2.3</div>
+</div>
+<div class="panel rounded-xl p-6">
+<div class="text-gray-500 text-xs mb-1">CHANNEL</div><div class="font-black text-xl text-yellow-300">Development Beta</div>
+</div>
+<div class="panel rounded-xl p-6">
+<div class="text-gray-500 text-xs mb-1">SHA-256</div><div class="font-mono text-sm text-gray-300 break-all">公開時に掲載</div>
+</div>
+<div class="panel rounded-xl p-6">
+<div class="text-gray-500 text-xs mb-1">FILE SIZE</div><div class="font-black text-xl">公開時に掲載</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="release" class="anchor py-14">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl font-black mb-6"><span class="text-red-500">02.</span> リリース情報</h2>
+<div class="panel rounded-xl overflow-hidden">
+<div class="overflow-x-auto"><table class="w-full text-left min-w-[760px]">
+<tbody class="divide-y divide-gray-700">
+<tr><th class="p-4 w-1/4">ソフトウェア</th><td class="p-4 text-gray-300">LJM.CFD.Beta. 0.6.2.3</td></tr>
+<tr><th class="p-4">公開種別</th><td class="p-4 text-gray-300">無料Beta版 / 開発・検証用</td></tr>
+<tr><th class="p-4">主な用途</th><td class="p-4 text-gray-300">自動車・エアロパーツの外部流れCFDプレビュー、形状比較、傾向確認</td></tr>
+<tr><th class="p-4">主な入力</th><td class="p-4 text-gray-300">STEP / STPを中心に検証。KN5は現在調整中。</td></tr>
+<tr><th class="p-4">CFD Backend</th><td class="p-4 text-gray-300">WSL2 + Ubuntu + OpenFOAM Foundation 14系を想定</td></tr>
+<tr><th class="p-4">配布状態</th><td class="p-4 text-yellow-300 font-bold">Setup.exe 公開準備中</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="mt-6 panel rounded-xl p-6">
+<h3 class="font-black text-xl mb-3">Beta 0.6.2.3で確認できる主な項目</h3>
+<p class="text-gray-400 leading-relaxed">Drag / Downforce / Lift / Side Force、圧力成分・粘性成分、速度 |U|、p、Cp、k、omega、Vorticity、Q-criterion、流線、疑似スモーク、表面圧力表示、メッシュ品質・セル数など。</p>
+</div>
+</div>
+</section>
+
+<section id="requirements" class="anchor py-14 bg-gray-900">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl font-black mb-3"><span class="text-red-500">03.</span> 必要・推奨PCスペック</h2>
+<p class="text-gray-400 mb-7">最低環境は小規模モデルでの起動・解析の目安です。複雑な車両モデルや高密度メッシュでは、より多くのメモリとCPU性能が必要です。</p>
+<div class="panel rounded-xl overflow-hidden">
+<div class="overflow-x-auto"><table class="w-full text-left min-w-[900px]">
+<thead class="bg-gray-800"><tr><th class="p-4">項目</th><th class="p-4">必要スペック目安</th><th class="p-4">推奨スペック</th></tr></thead>
+<tbody class="divide-y divide-gray-700 text-gray-300">
+<tr><th class="p-4 text-white">OS</th><td class="p-4">Windows 10 / 11 64-bit</td><td class="p-4">Windows 11 64-bit</td></tr>
+<tr><th class="p-4 text-white">CPU</th><td class="p-4">4コア / 8スレッド程度</td><td class="p-4">8コア / 16スレッド以上、Core i7 / Ryzen 7クラス以上を目安</td></tr>
+<tr><th class="p-4 text-white">RAM</th><td class="p-4">16 GB</td><td class="p-4">32 GB以上。Fine / Very Fineや大規模モデルでは64 GB以上を推奨</td></tr>
+<tr><th class="p-4 text-white">Storage</th><td class="p-4">SSD、空き30 GB以上</td><td class="p-4">NVMe SSD、空き100 GB以上</td></tr>
+<tr><th class="p-4 text-white">GPU</th><td class="p-4">OpenGL対応GPU。内蔵GPUでも軽量表示は動作する場合あり</td><td class="p-4">専用GPU、VRAM 4 GB以上</td></tr>
+<tr><th class="p-4 text-white">Display</th><td class="p-4">1366×768以上</td><td class="p-4">1920×1080以上</td></tr>
+<tr><th class="p-4 text-white">Virtualization</th><td class="p-4">WSL2を利用できること</td><td class="p-4">UEFI / BIOS仮想化有効</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="mt-5 border-l-4 border-yellow-500 bg-yellow-950/20 rounded-r-lg p-5 text-yellow-100/90 text-sm leading-relaxed">CFD計算は現Beta版では主にCPU側で処理します。GPUを高性能化しても計算時間が同じ割合で短縮される保証はありません。</div>
+</div>
+</section>
+
+<section id="environment" class="anchor py-14">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl font-black mb-7"><span class="text-red-500">04.</span> 必要環境</h2>
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+<div class="panel rounded-xl p-6"><i class="fa-brands fa-windows text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Windows 10 / 11</h3><p class="text-gray-400 text-sm mt-2">64-bit環境を使用してください。</p></div>
+<div class="panel rounded-xl p-6"><i class="fa-solid fa-terminal text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">WSL2</h3><p class="text-gray-400 text-sm mt-2">OpenFOAM実行環境として使用します。初回導入時に管理者権限や再起動が必要になる場合があります。</p></div>
+<div class="panel rounded-xl p-6"><i class="fa-brands fa-ubuntu text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Ubuntu</h3><p class="text-gray-400 text-sm mt-2">Ubuntu 24.04を想定しています。</p></div>
+<div class="panel rounded-xl p-6"><i class="fa-solid fa-wind text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">OpenFOAM</h3><p class="text-gray-400 text-sm mt-2">OpenFOAM Foundation 14系を想定。gmshToFoam / checkMesh / foamRun / foamToVTKを利用します。</p></div>
+<div class="panel rounded-xl p-6"><i class="fa-brands fa-python text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Python</h3><p class="text-gray-400 text-sm mt-2">Setup.exe配布版はPythonランタイム同梱方式を予定し、利用者による個別インストールを不要にします。</p></div>
+<div class="panel rounded-xl p-6"><i class="fa-solid fa-globe text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Internet</h3><p class="text-gray-400 text-sm mt-2">ダウンロードや初回のWSL / OpenFOAM環境構築時に必要です。</p></div>
+</div>
+</div>
+</section>
+
+<section id="install" class="anchor py-14 bg-gray-900">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl font-black mb-8"><span class="text-red-500">05.</span> インストール手順</h2>
+<div class="grid md:grid-cols-4 gap-5">
+<div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">01</div><h3 class="font-black mt-3">Setup.exe取得</h3><p class="text-gray-400 text-sm mt-2">本ページから正式なインストーラーをダウンロードします。</p></div>
+<div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">02</div><h3 class="font-black mt-3">インストール</h3><p class="text-gray-400 text-sm mt-2">Setup.exeを実行し、画面の案内に従います。</p></div>
+<div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">03</div><h3 class="font-black mt-3">CFD環境確認</h3><p class="text-gray-400 text-sm mt-2">WSL2 / Ubuntu / OpenFOAMの状態を確認・セットアップします。</p></div>
+<div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-3xl">04</div><h3 class="font-black mt-3">起動・解析</h3><p class="text-gray-400 text-sm mt-2">LJM.CFDを起動し、取扱説明書の最短手順に従って解析します。</p></div>
+</div>
+<div class="mt-6 panel rounded-xl p-6">
+<h3 class="font-black mb-2"><i class="fa-solid fa-shield-halved mr-2 text-red-500"></i>Windows SmartScreenについて</h3>
+<p class="text-gray-400 text-sm leading-relaxed">開発中のBeta版やコード署名されていないビルドでは、Windows SmartScreen等の警告が表示される場合があります。公開時には配布元・ファイル名・SHA-256を本ページで確認できるようにします。出所不明のミラーサイトからはダウンロードしないでください。</p>
+</div>
+</div>
+</section>
+
+<section id="docs" class="anchor py-14">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl font-black mb-7"><span class="text-red-500">06.</span> 取扱説明書</h2>
+<div class="grid md:grid-cols-2 gap-6">
+<div class="panel rounded-xl p-7">
+<i class="fa-solid fa-book-open text-red-500 text-3xl mb-4"></i>
+<h3 class="text-xl font-black">WEB版取扱説明書</h3>
+<p class="text-gray-400 mt-2 mb-5">ブラウザ上で目次から必要な項目へ移動できます。</p>
+<a href="ljm-cfd-manual.html" class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md">WEB版を読む</a>
+</div>
+<div class="panel rounded-xl p-7">
+<i class="fa-solid fa-file-pdf text-red-500 text-3xl mb-4"></i>
+<h3 class="text-xl font-black">PDF版取扱説明書</h3>
+<p class="text-gray-400 mt-2 mb-5">PDF本体のサイト配置後、直接ダウンロードできるようにします。現在はWEB版からPDF保存が可能です。</p>
+<a href="ljm-cfd-manual.html#print" class="inline-block bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-md">WEB版からPDF保存</a>
+</div>
+</div>
+</div>
+</section>
+
+<section id="terms" class="anchor py-14 bg-gray-900">
+<div class="container mx-auto px-6 max-w-6xl">
+<h2 class="text-3xl font-black mb-7"><span class="text-red-500">07.</span> 利用上の注意</h2>
+<div class="space-y-5">
+<div class="panel rounded-xl p-6"><h3 class="font-black text-lg mb-2">Beta版・未完成</h3><p class="text-gray-400 leading-relaxed">現在開発中であり、完成版ではありません。機能・UI・保存形式・対応データは今後変更される場合があります。</p></div>
+<div class="panel rounded-xl p-6"><h3 class="font-black text-lg mb-2">データ形式・KN5</h3><p class="text-gray-400 leading-relaxed">すべてのデータ形式、すべてのモデルで完璧に動作する保証はありません。KN5は現在調整中で、完全な互換性・安定動作を保証していません。</p></div>
+<div class="panel rounded-xl p-6"><h3 class="font-black text-lg mb-2">計算結果</h3><p class="text-gray-400 leading-relaxed">Drag、Downforce、Lift、Side Force、圧力、流速、Cp等は参考値・傾向確認用です。重要な安全・製品性能・法規判断を本ソフトの結果だけで行わないでください。</p></div>
+<div class="panel rounded-xl p-6"><h3 class="font-black text-lg mb-2">2次配布禁止</h3><p class="text-gray-400 leading-relaxed">作者の事前許可なく、LJM.CFD本体、Setup.exe、ZIP、改変版、再パッケージ版を第三者へ転載・2次配布することを禁止します。他の方へ紹介する際はこの公式配布ページのURLを共有してください。</p></div>
+<div class="panel rounded-xl p-6"><h3 class="font-black text-lg mb-2">第三者ソフトウェア</h3><p class="text-gray-400 leading-relaxed">OpenFOAM、Gmshその他の第三者ソフトウェア・ライブラリには、それぞれの権利者のライセンス条件が適用されます。配布物に含める場合は各ライセンスに従います。</p></div>
+</div>
+</div>
+</section>
+
+<section id="support" class="anchor py-14">
+<div class="container mx-auto px-6 max-w-5xl text-center">
+<div class="text-red-500 text-4xl mb-4"><i class="fa-brands fa-x-twitter"></i></div>
+<h2 class="text-3xl font-black">08. フィードバック</h2>
+<p class="text-gray-400 mt-4 max-w-2xl mx-auto leading-relaxed">不具合、要望、対応してほしい形式、解析結果についてのご意見を歓迎します。Xへ投稿する場合は <strong class="text-white">#LJM.CFD</strong> を付けていただくことを推奨します。バージョン、PC構成、入力形式、発生した現象も添えると改善に役立ちます。</p>
+<div class="mt-7 flex flex-col sm:flex-row justify-center gap-3">
+<a href="https://twitter.com/intent/tweet?text=%23LJM.CFD%0A%0ALJM.CFD%20Beta%E3%81%B8%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%89%E3%83%90%E3%83%83%E3%82%AF%EF%BC%9A%0A" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center bg-black border border-gray-600 hover:border-red-500 text-white font-bold py-3 px-7 rounded-md"><i class="fa-brands fa-x-twitter mr-2"></i>Xに #LJM.CFD で投稿</a>
+<a href="contact.html" class="inline-flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-7 rounded-md">お問い合わせ</a>
+</div>
+</div>
+</section>
+</main>
+
+<footer class="bg-black py-6"><p class="text-center text-sm text-gray-500">&copy; 2026 Lunatech JAPAN Modify. All Rights Reserved.</p></footer>
+
+<a class="x-feedback-float" href="https://twitter.com/intent/tweet?text=%23LJM.CFD%0A%0ALJM.CFD%20Beta%E3%81%B8%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%89%E3%83%90%E3%83%83%E3%82%AF%EF%BC%9A%0A" target="_blank" rel="noopener noreferrer" aria-label="Xに #LJM.CFD を付けてフィードバックを投稿"><i class="fa-brands fa-x-twitter text-lg"></i><span class="x-label">Xでフィードバック</span></a>
+
+<script>
+const DOWNLOAD_URL="";
+const beta=document.getElementById("agree-beta");
+const redist=document.getElementById("agree-redistribution");
+const btn=document.getElementById("installer-button");
+function updateDownloadButton(){
+  if(!DOWNLOAD_URL){
+    btn.disabled=true;
+    btn.classList.add("disabled-download");
+    return;
+  }
+  const ready=beta.checked&&redist.checked;
+  btn.disabled=!ready;
+  btn.classList.toggle("disabled-download",!ready);
+  btn.textContent=ready?"Setup.exe をダウンロード":"注意事項を確認してください";
+}
+beta.addEventListener("change",updateDownloadButton);
+redist.addEventListener("change",updateDownloadButton);
+btn.addEventListener("click",()=>{if(!btn.disabled&&DOWNLOAD_URL)location.href=DOWNLOAD_URL;});
+updateDownloadButton();
+</script>
+</body>
+</html>
