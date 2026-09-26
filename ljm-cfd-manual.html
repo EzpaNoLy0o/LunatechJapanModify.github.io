@@ -103,9 +103,24 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{col
 <table><tr><th>操作</th><th>役割</th></tr><tr><td>STEPを開く</td><td>新しいSTEPモデルを読込。Ctrl+O。</td></tr><tr><td>既存解析フォルダを開く</td><td>LJM_CFD_mesh_* または旧 AutoCFD_mesh_* を再読込。</td></tr><tr><td>フィット</td><td>モデルを表示領域へフィット。Fキー。</td></tr><tr><td>Homeビュー</td><td>標準ビューへ戻す。</td></tr><tr><td>風洞を生成</td><td>現在の風洞余白で更新。</td></tr><tr><td>外部メッシュ生成</td><td>外部流体メッシュ生成を開始。</td></tr></table>
 <h3>3Dビュー</h3><table><tr><th>マウス操作</th><th>動作</th></tr><tr><td>左ドラッグ</td><td>Orbit / 回転</td></tr><tr><td>中ドラッグ</td><td>Pan</td></tr><tr><td>Shift + 中ドラッグ</td><td>Orbit / 回転</td></tr><tr><td>ホイール</td><td>Zoom</td></tr><tr><td>右ドラッグ</td><td>Dolly</td></tr></table>
 
-<h2 id="s5">5. 最短手順: STEPから結果表示まで</h2>
-<ol><li>STEPを開く。</li><li>必要ならYaw / Pitch / Rollを設定して姿勢を適用。</li><li>仮想風洞を生成 / 更新。</li><li>速度、温度、圧力、Ground、乱流強度、Iterationsを設定。</li><li>Mesh Qualityを選び、外部メッシュ生成・保存。</li><li>OpenFOAMへ変換 + checkMesh。</li><li>CFDテスト計算を開始。</li><li>収束後、結果をVTK変換 / 更新。</li><li>断面、流線、表面p/Cp、渦等値面、空力荷重を確認。</li></ol>
-<div class="note">モデル姿勢・風洞寸法・メッシュ寸法を変更した場合はメッシュから作り直してください。</div>
+<h2 id="s5">5. 基本操作順序: STEPから結果表示まで</h2>
+<p>部品単体を <strong>Component Wind Tunnel</strong> で解析する場合の基本的な操作順序です。</p>
+<ol>
+<li><strong>STEPを読み込みます。</strong></li>
+<li><strong>モデル姿勢を調整します。</strong><br>現在のBeta版では風向きそのものは変更できません。計測したい向きに対して、モデル姿勢のYaw / Pitch / Rollを使って部品側を回転させてください。</li>
+<li><strong>解析モードを「Component Wind Tunnel」に切り替えます。</strong></li>
+<li><strong>Test Iterationsを200～1000程度に設定します。</strong><br>おすすめは500以上です。反復回数を増やすと収束しやすく、結果が安定しやすくなる一方、解析時間は長くなります。最初から極端に大きくせず、収束しない・途中で終了する場合に200 → 500 → 1000のように段階的に増やす方法を推奨します。</li>
+<li><strong>画面最下部までスクロールし、「外部メッシュ生成・保存」を実行します。</strong></li>
+<li><strong>完了したら「OpenFOAMへ変換 + checkMesh」をクリックします。</strong></li>
+<li><strong>完了したら「CFDテスト計算を開始」をクリックします。</strong></li>
+<li><strong>完了したら「収束結果をVTK変換 / 更新」をクリックします。</strong></li>
+<li><strong>ここまでエラーなく完了すれば結果表示が可能です。</strong><br>「3D流線を表示」など、確認したい項目をクリックすると対応する可視化結果が表示されます。</li>
+<li><strong>「表示 / 位置合わせ」欄から各項目の表示・非表示を切り替えます。</strong></li>
+<li><strong>「空気荷重」欄からDrag / Downforce / Lift / Side Forceなどの荷重情報を確認できます。</strong></li>
+</ol>
+<div class="note"><strong>反復回数について:</strong> Test Iterationsは「多ければ必ず精度が上がる」という意味ではなく、十分な収束に到達するための最大反復回数です。収束前に終了している場合は反復回数を増やすことで結果が安定する可能性があります。</div>
+<div class="note"><strong>空気荷重について:</strong> 表示される荷重値は仮想解析による参考値です。実測値や風洞試験と完全に一致することを保証するものではありません。絶対値だけでなく、同一条件での形状比較や傾向確認を中心にご利用ください。</div>
+<div class="note">モデル姿勢・風洞寸法・メッシュ条件を変更した場合は、原則としてメッシュ生成からやり直してください。</div>
 
 <h2 id="s6">6. STEPモデルの準備と読込</h2>
 <p>STEP / STPを読み込みます。CAD座標はmmとして扱い、Gmsh / OpenFOAMへ渡す際にmへ変換します。</p>
@@ -125,7 +140,7 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{col
 <div class="note">メッシュ生成では全方向に正の余白が必要です。Bottom=0の完全地面接触は0.6.2.3では未対応です。</div>
 
 <h2 id="s10">10. 流れ条件の設定</h2>
-<table><tr><th>項目</th><th>初期値</th><th>備考</th></tr><tr><td>Vehicle Speed</td><td>200 km/h</td><td>0-600 km/h</td></tr><tr><td>Air Temperature</td><td>25 °C</td><td>-30〜80 °C</td></tr><tr><td>Pressure</td><td>101.325 kPa</td><td>50-150 kPa</td></tr><tr><td>Ground</td><td>Moving</td><td>Moving / Fixed</td></tr><tr><td>Turbulence</td><td>k-omega SST</td><td>固定</td></tr><tr><td>Turb. Intensity</td><td>1.0 %</td><td>0.1-20 %</td></tr><tr><td>Iterations</td><td>50</td><td>10-5000</td></tr><tr><td>Mesh Quality</td><td>Normal</td><td>Draft / Normal / Fine / Very Fine</td></tr></table>
+<table><tr><th>項目</th><th>初期値</th><th>備考</th></tr><tr><td>Vehicle Speed</td><td>200 km/h</td><td>0-600 km/h</td></tr><tr><td>Air Temperature</td><td>25 °C</td><td>-30〜80 °C</td></tr><tr><td>Pressure</td><td>101.325 kPa</td><td>50-150 kPa</td></tr><tr><td>Ground</td><td>Moving</td><td>Moving / Fixed</td></tr><tr><td>Turbulence</td><td>k-omega SST</td><td>固定</td></tr><tr><td>Turb. Intensity</td><td>1.0 %</td><td>0.1-20 %</td></tr><tr><td>Test Iterations</td><td>50</td><td>10-5000。実解析では200～1000程度、500以上を推奨。収束しない場合は段階的に増やす。</td></tr><tr><td>Mesh Quality</td><td>Normal</td><td>Draft / Normal / Fine / Very Fine</td></tr></table>
 
 <h2 id="s11">11. 外部流体メッシュの生成</h2>
 <table><tr><th>Preset</th><th>Near目安</th><th>Far</th></tr><tr><td>Draft</td><td>最大寸法 x 0.18</td><td>Near x 8</td></tr><tr><td>Normal</td><td>最大寸法 x 0.10</td><td>Near x 8</td></tr><tr><td>Fine</td><td>最大寸法 x 0.06</td><td>Near x 8</td></tr><tr><td>Very Fine</td><td>最大寸法 x 0.035</td><td>Near x 8</td></tr></table>
@@ -139,7 +154,7 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{col
 
 <h2 id="s13">13. CFDテスト計算</h2>
 <table><tr><th>項目</th><th>内容</th></tr><tr><td>解析</td><td>定常・非圧縮RANSプレビュー</td></tr><tr><td>OpenFOAM</td><td>foamRun / incompressibleFluid</td></tr><tr><td>乱流モデル</td><td>k-omega SST</td></tr><tr><td>主流方向</td><td>+X固定</td></tr><tr><td>収束判定</td><td>p 1e-3、U 1e-4、k/omega 1e-4</td></tr></table>
-<p>Iterationsは最大反復回数です。残差条件を満たすと設定回数より前に収束終了する場合があります。</p>
+<p>Test Iterationsは最大反復回数です。残差条件を満たすと設定回数より前に収束終了する場合があります。50回は短いテスト向けの初期値で、実際の部品解析では200～1000程度、特に500以上を目安にしてください。収束しない場合は段階的に増やします。</p>
 
 <h2 id="s14">14. 空力荷重の読み方</h2>
 <table><tr><th>表示</th><th>定義</th></tr><tr><td>Drag (+X)</td><td>Fx [N]</td></tr><tr><td>Downforce (-Z)</td><td>-Fz [N]</td></tr><tr><td>Lift (+Z)</td><td>Fz [N]</td></tr><tr><td>Side Force (+Y)</td><td>Fy [N]</td></tr><tr><td>Pressure / viscous</td><td>DragとDownforceを圧力 / 粘性に分解</td></tr></table>
