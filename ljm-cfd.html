@@ -97,7 +97,7 @@
                 </a>
                 <a href="#requirements" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-bold py-4 px-8 rounded-md text-lg transition" data-lang-key="requirements_btn">動作環境を見る</a>
             </div>
-            <p class="mt-4 text-sm text-gray-500" data-lang-key="release_note">Setup.exeは現在公開準備中です。専用ダウンロードページで公開状況をご確認ください。</p>
+            <p class="mt-4 text-sm text-gray-500" data-lang-key="release_note">Beta 0.6.2.3 を公開中です。専用ダウンロードページから取得できます。</p>
         </div>
     </section>
 
@@ -235,7 +235,7 @@
             <h2 class="text-3xl md:text-4xl font-black mb-8 text-center" data-lang-key="install_title">INSTALLATION</h2>
             <div class="grid md:grid-cols-3 gap-6">
                 <div class="section-bg rounded-lg p-6 border border-gray-700"><div class="text-red-500 font-black text-3xl mb-3">01</div><h3 class="font-bold text-lg mb-2" data-lang-key="step1_title">Setup.exeを取得</h3><p class="text-gray-400" data-lang-key="step1_desc">GitHub Releasesから最新版のセットアップファイルをダウンロードします。</p></div>
-                <div class="section-bg rounded-lg p-6 border border-gray-700"><div class="text-red-500 font-black text-3xl mb-3">02</div><h3 class="font-bold text-lg mb-2" data-lang-key="step2_title">インストール</h3><p class="text-gray-400" data-lang-key="step2_desc">Setup.exeを実行します。Pythonはアプリ側へ同梱する配布方式を予定しています。</p></div>
+                <div class="section-bg rounded-lg p-6 border border-gray-700"><div class="text-red-500 font-black text-3xl mb-3">02</div><h3 class="font-bold text-lg mb-2" data-lang-key="step2_title">インストール</h3><p class="text-gray-400" data-lang-key="step2_desc">Setup.exeを実行します。Pythonランタイムはアプリ側へ同梱されています。</p></div>
                 <div class="section-bg rounded-lg p-6 border border-gray-700"><div class="text-red-500 font-black text-3xl mb-3">03</div><h3 class="font-bold text-lg mb-2" data-lang-key="step3_title">CFD環境を確認</h3><p class="text-gray-400" data-lang-key="step3_desc">CFD計算にはWSL2 / Ubuntu / OpenFOAMが必要です。初回セットアップで確認します。</p></div>
             </div>
         </div>
@@ -265,7 +265,7 @@
                             <tr><th class="p-4 text-white">画面</th><td class="p-4">1366×768以上</td><td class="p-4">1920×1080以上</td></tr>
                             <tr><th class="p-4 text-white">仮想化</th><td class="p-4">WSL2が利用可能で、UEFI/BIOSの仮想化機能が有効</td><td class="p-4">同左</td></tr>
                             <tr><th class="p-4 text-white">CFD環境</th><td class="p-4">WSL2 + Ubuntu + OpenFOAM</td><td class="p-4">WSL2 + Ubuntu 24.04 + OpenFOAM Foundation 14を想定</td></tr>
-                            <tr><th class="p-4 text-white">Python</th><td class="p-4" colspan="2">Setup.exe配布版ではPythonランタイムをアプリ側へ同梱し、利用者による個別インストールを不要にする構成を予定しています。</td></tr>
+                            <tr><th class="p-4 text-white">Python</th><td class="p-4" colspan="2">Setup.exe配布版にはPythonランタイムを同梱しているため、利用者によるPythonの個別インストールは不要です。</td></tr>
                             <tr><th class="p-4 text-white">インターネット</th><td class="p-4">初回ダウンロード・WSL/OpenFOAM導入時に必要</td><td class="p-4">安定したブロードバンド接続</td></tr>
                         </tbody>
                     </table>
@@ -333,12 +333,12 @@ const translations = {
         nav_home:"HOME", nav_services:"事業内容", nav_company:"会社概要", nav_products:"商品ラインナップ", nav_cfd:"LJM CFD", nav_estimate:"自動見積もり", nav_contact:"お問い合わせ",
         beta_badge:"FREE BETA / DEVELOPMENT BUILD",
         hero_desc:"現在開発中の未完成Beta版です。自動車の外部空力解析を、できるだけシンプルな操作で実行することを目的に開発しています。",
-        download_btn:"無料ダウンロード / GitHub Releases", requirements_btn:"動作環境を見る", release_note:"配布ファイルがまだ公開されていない場合、Releasesページには最新版が表示されません。",
+        download_btn:"無料ダウンロード", requirements_btn:"動作環境を見る", release_note:"Beta 0.6.2.3 を公開中です。ダウンロード前に注意事項をご確認ください。",
         feature1_title:"自動車向けCFD", feature1_desc:"車体・エアロパーツの外部流れを対象に、メッシュ作成からOpenFOAM解析までをGUIから実行します。",
         feature2_title:"流れを可視化", feature2_desc:"流速、圧力、Cp、流線、渦度、Q-criterionなどの結果を3Dで確認できます。",
         feature3_title:"空力荷重を確認", feature3_desc:"Drag、Downforce、Lift、Side Forceと、圧力・粘性成分を確認できます。",
         install_title:"INSTALLATION", step1_title:"Setup.exeを取得", step1_desc:"GitHub Releasesから最新版のセットアップファイルをダウンロードします。",
-        step2_title:"インストール", step2_desc:"Setup.exeを実行します。Pythonはアプリ側へ同梱する配布方式を予定しています。",
+        step2_title:"インストール", step2_desc:"Setup.exeを実行します。Pythonランタイムはアプリ側へ同梱されています。",
         step3_title:"CFD環境を確認", step3_desc:"CFD計算にはWSL2 / Ubuntu / OpenFOAMが必要です。初回セットアップで確認します。",
         requirements_title:"動作環境 / REQUIREMENTS", python_req:"配布版では個別インストール不要の構成を予定", version_label:"公開バージョン", price_label:"価格", price_value:"無料 / FREE",
         feedback_title:"Beta版へのフィードバックを募集しています", feedback_desc:"不具合、使いにくい点、欲しい機能、解析結果についてのご意見を今後の開発に活用します。", feedback_btn:"フィードバック・お問い合わせ",
@@ -348,14 +348,14 @@ const translations = {
         nav_home:"HOME", nav_services:"SERVICES", nav_company:"COMPANY", nav_products:"PRODUCTS", nav_cfd:"LJM CFD", nav_estimate:"ESTIMATE", nav_contact:"CONTACT",
         beta_badge:"FREE BETA / DEVELOPMENT BUILD",
         hero_desc:"A CFD application under development to make automotive external-aerodynamics analysis as simple to operate as possible.",
-        download_btn:"Free Download / GitHub Releases", requirements_btn:"View Requirements", release_note:"If no public build is available yet, the latest installer will not appear on the Releases page.",
+        download_btn:"Free Download / GitHub Releases", requirements_btn:"View Requirements", release_note:"Beta 0.6.2.3 is now available. Please review the notices before downloading.",
         feature1_title:"Automotive CFD", feature1_desc:"Run the workflow from meshing to OpenFOAM analysis for vehicle bodies and aerodynamic parts through a GUI.",
         feature2_title:"Flow Visualization", feature2_desc:"Inspect velocity, pressure, Cp, streamlines, vorticity, Q-criterion and other CFD results in 3D.",
         feature3_title:"Aerodynamic Forces", feature3_desc:"Inspect Drag, Downforce, Lift, Side Force, including pressure and viscous components.",
         install_title:"INSTALLATION", step1_title:"Get Setup.exe", step1_desc:"Download the latest setup file from GitHub Releases.",
-        step2_title:"Install", step2_desc:"Run Setup.exe. The distributable build is planned to include its Python runtime.",
+        step2_title:"Install", step2_desc:"Run Setup.exe. The distributable build includes its Python runtime.",
         step3_title:"Check CFD Environment", step3_desc:"CFD calculations require WSL2, Ubuntu and OpenFOAM. The first-run setup checks the environment.",
-        requirements_title:"REQUIREMENTS", python_req:"No separate Python installation planned for the distributable build", version_label:"Version", price_label:"Price", price_value:"FREE",
+        requirements_title:"REQUIREMENTS", python_req:"No separate Python installation is required for the distributable build", version_label:"Version", price_label:"Price", price_value:"FREE",
         feedback_title:"Beta Feedback Wanted", feedback_desc:"Bug reports, usability feedback, feature requests and comments on analysis results help guide development.", feedback_btn:"Feedback / Contact",
         beta_notice:"<strong class='text-gray-300'>Beta Notice:</strong> This software is a development beta. Result validity depends on the model, mesh, boundary conditions and other settings. Verify important engineering decisions with experiments or independent methods. See the distribution notice for terms and licensing."
     }
