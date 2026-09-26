@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="LJM.CFD.Beta. 0.6.2.3 WEB版取扱説明書">
+<title>LJM.CFD.Beta. 0.6.2.3 WEB版取扱説明書</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{color:#EF4444}
+.doc h2{font-size:1.75rem;font-weight:900;margin-top:3.5rem;margin-bottom:1rem;border-bottom:1px solid #374151;padding-bottom:.7rem}
+.doc h3{font-size:1.25rem;font-weight:800;margin-top:2rem;margin-bottom:.75rem;color:#f3f4f6}
+.doc p{color:#d1d5db;line-height:1.9;margin:.8rem 0}.doc ul,.doc ol{color:#d1d5db;margin:1rem 0;padding-left:1.4rem;line-height:1.9}
+.doc ul{list-style:disc}.doc ol{list-style:decimal}.doc table{width:100%;border-collapse:collapse;margin:1.25rem 0}.doc th,.doc td{border:1px solid #4b5563;padding:.75rem;vertical-align:top}.doc th{background:#1f2937;text-align:left}.note{border-left:4px solid #ef4444;background:#1f2937;padding:1rem 1.25rem;border-radius:.35rem;margin:1.2rem 0;color:#e5e7eb}
+.toc a{display:block;color:#d1d5db;padding:.45rem .65rem;border-radius:.35rem}.toc a:hover{background:#1f2937;color:#f87171}
+@media print{header,.screen-only,.toc{display:none!important}body{background:white;color:black}.doc{max-width:none!important}.doc p,.doc ul,.doc ol,.doc td{color:#111}.doc h2,.doc h3,.doc th{color:#000}.doc th{background:#eee}.note{background:#f4f4f4;color:#111;border-color:#555}a{color:#000;text-decoration:none}}
+</style>
+</head>
+<body class="antialiased">
+<header class="screen-only bg-gray-900/95 sticky top-0 z-50 border-b border-gray-800">
+<div class="container mx-auto px-6 py-4 flex flex-wrap gap-3 justify-between items-center">
+<div>
+<a href="ljm-cfd-docs.html" class="text-red-400 hover:text-red-300 text-sm"><i class="fa-solid fa-arrow-left mr-2"></i>ドキュメント一覧</a>
+<div class="font-black text-lg mt-1">LJM.CFD.Beta. 0.6.2.3 - WEB MANUAL</div>
+</div>
+<div class="flex gap-3">
+<button onclick="window.print()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md"><i class="fa-solid fa-file-pdf mr-2"></i>PDFとして保存</button>
+<a href="ljm-cfd.html" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md">LJM CFD</a>
+</div>
+</div>
+</header>
+
+<main class="container mx-auto px-5 md:px-6 py-10">
+<div class="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-10 max-w-7xl mx-auto">
+<aside class="toc screen-only lg:sticky lg:top-28 lg:self-start panel">
+<div class="bg-gray-900 border border-gray-700 rounded-xl p-4 max-h-[76vh] overflow-y-auto">
+<div class="font-black mb-3 text-red-400">目次</div>
+<a href="#s1">1. ソフトの概要</a><a href="#s2">2. 動作環境</a><a href="#s3">3. 初回セットアップ</a>
+<a href="#s4">4. 画面構成</a><a href="#s5">5. 最短手順</a><a href="#s6">6. STEPモデル</a>
+<a href="#s7">7. 解析モード</a><a href="#s8">8. 姿勢と座標系</a><a href="#s9">9. 仮想風洞</a>
+<a href="#s10">10. 流れ条件</a><a href="#s11">11. メッシュ生成</a><a href="#s12">12. OpenFOAM変換</a>
+<a href="#s13">13. CFD計算</a><a href="#s14">14. 空力荷重</a><a href="#s15">15. 3D可視化</a>
+<a href="#s16">16. 計測項目</a><a href="#s17">17. 既存解析の再読込</a><a href="#s18">18. 出力・ログ</a>
+<a href="#s19">19. トラブルシューティング</a><a href="#s20">20. Beta版の制限</a>
+<a href="#appendix">付録</a>
+</div>
+</aside>
+
+<article class="doc max-w-4xl">
+<div class="border border-gray-700 bg-gray-900 rounded-xl p-7 md:p-10">
+<div class="text-sm text-red-400 font-bold">Automotive CFD Preview / Beta User Manual</div>
+<h1 class="text-4xl md:text-5xl font-black mt-2">LJM<span class="accent">.CFD</span>.Beta. 0.6.2.3</h1>
+<p class="text-xl text-gray-300 mt-3">取扱説明書 - WEB版</p>
+<div class="note"><strong>重要:</strong> 本ソフトはBeta版のCFDプレビュー環境です。解析結果は設計比較・傾向把握の参考として使用し、最終的な安全性・法規適合・構造強度・空力性能の保証には使用しないでください。</div>
+</div>
+
+<h2 id="s1">1. ソフトの概要</h2>
+<p>LJM.CFD.Beta. 0.6.2.3 は、自動車および自動車部品の外部流れ解析を、OpenFOAMの設定ファイルを直接編集せずGUIから実行するためのBeta版ツールです。CAD読込、風洞領域、四面体メッシュ、OpenFOAM変換、定常RANS計算、空力荷重、3D可視化を一連の操作として扱います。</p>
+<ul><li>STEP / STP形式の3D CAD読込</li><li>Yaw / Pitch / Rollによるモデル姿勢変更</li><li>モデル寸法倍率での仮想風洞生成</li><li>Gmshによる外部流体四面体メッシュ</li><li>WSL2上のOpenFOAMへ変換・checkMesh</li><li>steady incompressibleFluid + k-omega SSTによるCFDプレビュー</li><li>Drag / Downforce / Lift / Side Force</li><li>速度、圧力、k、omega、渦度、Q-criterionの3D可視化</li></ul>
+<div class="note">0.6.2.3では境界層プリズムがないため、絶対値よりも形状変更前後の傾向比較を中心に使用してください。</div>
+
+<h2 id="s2">2. 動作環境と必要ソフト</h2>
+<table><tr><th>項目</th><th>必要条件 / 推奨</th></tr><tr><td>OS</td><td>Windows 10 / 11。OpenFOAM連携はWindows + WSL2を前提。</td></tr><tr><td>Python</td><td>ソース版はPython 3.11。配布EXE版では個別インストール不要の構成を予定。</td></tr><tr><td>WSL</td><td>WSL2 / Ubuntu 24.04想定。</td></tr><tr><td>OpenFOAM</td><td>OpenFOAM Foundation 14系。gmshToFoam / checkMesh / foamRun / foamToVTKが利用可能であること。</td></tr><tr><td>CAD入力</td><td>STEP (*.step, *.stp)</td></tr></table>
+
+<h2 id="s3">3. 初回セットアップ</h2>
+<ol><li>配布ファイルをローカルフォルダへ配置します。</li><li>ソース版では <code>setup_windows.bat</code> を初回実行し、Windows側Python環境を構築します。Setup.exe配布版ではインストーラーの案内に従います。</li><li>必要に応じてメッシュ / OpenFOAM / VTKの自己テストを実行します。</li><li>LJM.CFDを起動し、ウィンドウタイトルに対象バージョンが表示されることを確認します。</li></ol>
+
+<h2 id="s4">4. 画面構成と基本操作</h2>
+<table><tr><th>操作</th><th>役割</th></tr><tr><td>STEPを開く</td><td>新しいSTEPモデルを読込。Ctrl+O。</td></tr><tr><td>既存解析フォルダを開く</td><td>LJM_CFD_mesh_* または旧 AutoCFD_mesh_* を再読込。</td></tr><tr><td>フィット</td><td>モデルを表示領域へフィット。Fキー。</td></tr><tr><td>Homeビュー</td><td>標準ビューへ戻す。</td></tr><tr><td>風洞を生成</td><td>現在の風洞余白で更新。</td></tr><tr><td>外部メッシュ生成</td><td>外部流体メッシュ生成を開始。</td></tr></table>
+<h3>3Dビュー</h3><table><tr><th>マウス操作</th><th>動作</th></tr><tr><td>左ドラッグ</td><td>Orbit / 回転</td></tr><tr><td>中ドラッグ</td><td>Pan</td></tr><tr><td>Shift + 中ドラッグ</td><td>Orbit / 回転</td></tr><tr><td>ホイール</td><td>Zoom</td></tr><tr><td>右ドラッグ</td><td>Dolly</td></tr></table>
+
+<h2 id="s5">5. 最短手順: STEPから結果表示まで</h2>
+<ol><li>STEPを開く。</li><li>必要ならYaw / Pitch / Rollを設定して姿勢を適用。</li><li>仮想風洞を生成 / 更新。</li><li>速度、温度、圧力、Ground、乱流強度、Iterationsを設定。</li><li>Mesh Qualityを選び、外部メッシュ生成・保存。</li><li>OpenFOAMへ変換 + checkMesh。</li><li>CFDテスト計算を開始。</li><li>収束後、結果をVTK変換 / 更新。</li><li>断面、流線、表面p/Cp、渦等値面、空力荷重を確認。</li></ol>
+<div class="note">モデル姿勢・風洞寸法・メッシュ寸法を変更した場合はメッシュから作り直してください。</div>
+
+<h2 id="s6">6. STEPモデルの準備と読込</h2>
+<p>STEP / STPを読み込みます。CAD座標はmmとして扱い、Gmsh / OpenFOAMへ渡す際にmへ変換します。</p>
+<ul><li>外形が閉じた3Dソリッドを推奨。</li><li>極端に小さい面、重複面、自己交差を可能な範囲で整理。</li><li>解析不要な内部部品を削除するとメッシュ時間とセル数を抑えられます。</li></ul>
+<table><tr><th>表示</th><th>内容</th></tr><tr><td>File</td><td>読み込んだファイル名</td></tr><tr><td>LxWxH</td><td>X/Y/Z方向のモデル寸法 [mm]</td></tr><tr><td>Bounds</td><td>Xmin/Xmax、Ymin/Ymax、Zmin/Zmax [mm]</td></tr></table>
+
+<h2 id="s7">7. 解析モード</h2>
+<table><tr><th>モード</th><th>0.6.2.3での扱い</th></tr><tr><td>Vehicle Wind Tunnel</td><td>車両全体の外部流れ。標準使用モード。</td></tr><tr><td>Component Wind Tunnel</td><td>単体部品の外部流れ。</td></tr><tr><td>Internal Flow</td><td>UIには存在しますが、この版では実用解析フロー未完成。</td></tr></table>
+
+<h2 id="s8">8. モデル姿勢と座標系</h2>
+<p>主流方向はグローバル +X 固定です。風向ベクトルを回す代わりにモデルを回転して相対角度を与えます。</p>
+<table><tr><th>設定</th><th>回転軸 / 範囲</th></tr><tr><td>Yaw</td><td>Z軸、-180°〜+180°</td></tr><tr><td>Pitch</td><td>Y軸、-90°〜+90°</td></tr><tr><td>Roll</td><td>X軸、-180°〜+180°</td></tr></table>
+<p>Wind Yaw / Wind Pitch / Wind AoA / Wheel Rotationは0.6.2.3では無効です。</p>
+
+<h2 id="s9">9. 仮想風洞の設定</h2>
+<table><tr><th>方向</th><th>初期倍率</th></tr><tr><td>前方</td><td>3.0 x Length</td></tr><tr><td>後方</td><td>6.0 x Length</td></tr><tr><td>左右</td><td>3.0 x Width</td></tr><tr><td>上方</td><td>3.0 x Height</td></tr><tr><td>下方</td><td>0.25 x Height</td></tr></table>
+<div class="note">メッシュ生成では全方向に正の余白が必要です。Bottom=0の完全地面接触は0.6.2.3では未対応です。</div>
+
+<h2 id="s10">10. 流れ条件の設定</h2>
+<table><tr><th>項目</th><th>初期値</th><th>備考</th></tr><tr><td>Vehicle Speed</td><td>200 km/h</td><td>0-600 km/h</td></tr><tr><td>Air Temperature</td><td>25 °C</td><td>-30〜80 °C</td></tr><tr><td>Pressure</td><td>101.325 kPa</td><td>50-150 kPa</td></tr><tr><td>Ground</td><td>Moving</td><td>Moving / Fixed</td></tr><tr><td>Turbulence</td><td>k-omega SST</td><td>固定</td></tr><tr><td>Turb. Intensity</td><td>1.0 %</td><td>0.1-20 %</td></tr><tr><td>Iterations</td><td>50</td><td>10-5000</td></tr><tr><td>Mesh Quality</td><td>Normal</td><td>Draft / Normal / Fine / Very Fine</td></tr></table>
+
+<h2 id="s11">11. 外部流体メッシュの生成</h2>
+<table><tr><th>Preset</th><th>Near目安</th><th>Far</th></tr><tr><td>Draft</td><td>最大寸法 x 0.18</td><td>Near x 8</td></tr><tr><td>Normal</td><td>最大寸法 x 0.10</td><td>Near x 8</td></tr><tr><td>Fine</td><td>最大寸法 x 0.06</td><td>Near x 8</td></tr><tr><td>Very Fine</td><td>最大寸法 x 0.035</td><td>Near x 8</td></tr></table>
+<p>完了時にcellsとmin SICNを表示します。min SICN &lt; 0.10では品質注意を表示します。</p>
+<div class="note">0.6.2.3の体積メッシュは1次四面体で境界層プリズムを生成しません。</div>
+
+<h2 id="s12">12. OpenFOAM変換とcheckMesh</h2>
+<p>mesh.mshをWSL2から参照し、gmshToFoamでOpenFOAM形式へ変換後、checkMesh -allTopology -allGeometryを実行します。</p>
+<p>主要境界名: inlet / outlet / side_min / side_max / ground / top / body。</p>
+<p>失敗時は <code>openfoam_error.txt</code> と <code>openfoam_check.log</code> を確認してください。</p>
+
+<h2 id="s13">13. CFDテスト計算</h2>
+<table><tr><th>項目</th><th>内容</th></tr><tr><td>解析</td><td>定常・非圧縮RANSプレビュー</td></tr><tr><td>OpenFOAM</td><td>foamRun / incompressibleFluid</td></tr><tr><td>乱流モデル</td><td>k-omega SST</td></tr><tr><td>主流方向</td><td>+X固定</td></tr><tr><td>収束判定</td><td>p 1e-3、U 1e-4、k/omega 1e-4</td></tr></table>
+<p>Iterationsは最大反復回数です。残差条件を満たすと設定回数より前に収束終了する場合があります。</p>
+
+<h2 id="s14">14. 空力荷重の読み方</h2>
+<table><tr><th>表示</th><th>定義</th></tr><tr><td>Drag (+X)</td><td>Fx [N]</td></tr><tr><td>Downforce (-Z)</td><td>-Fz [N]</td></tr><tr><td>Lift (+Z)</td><td>Fz [N]</td></tr><tr><td>Side Force (+Y)</td><td>Fy [N]</td></tr><tr><td>Pressure / viscous</td><td>DragとDownforceを圧力 / 粘性に分解</td></tr></table>
+<p>代表値はforces.datの最後から最大20サンプル平均です。Cd / Clは0.6.2.3では未算出です。</p>
+
+<h2 id="s15">15. 3D結果可視化</h2>
+<ul><li>速度 |U| [m/s]</li><li>kinematic pressure p [m²/s²]</li><li>乱流運動エネルギー k [m²/s²]</li><li>比散逸率 omega [1/s]</li><li>Vorticity magnitude [1/s]</li><li>Q-criterion [1/s²]</li></ul>
+<h3>断面表示</h3><p>X / Y / Z断面、位置スライダー、透明度、セル線、自動/手動レンジを利用できます。</p>
+<h3>3D流線</h3><p>前方全面、車体上面、床下、左右側面、リヤウイング付近などのシードを選択できます。</p>
+<h3>スモーク風表示</h3><p>定常速度場から高密度半透明流線を生成します。時間発展する粒子追跡ではありません。</p>
+<h3>車体表面 p / Cp</h3><p>Cp = (p - p_inf) / (0.5 x U_inf²) として算出します。</p>
+<h3>等値面</h3><p>Q-criterion、Vorticity magnitude、乱流運動エネルギーkを表示可能です。</p>
+
+<h2 id="s16">16. 計測・表示可能な項目</h2>
+<table><tr><th>分類</th><th>項目</th><th>単位</th></tr>
+<tr><td>空力荷重</td><td>Drag / Downforce / Lift / Side force</td><td>N</td></tr>
+<tr><td>空力荷重</td><td>Pressure / viscous Drag / Downforce</td><td>N</td></tr>
+<tr><td>流れ場</td><td>速度 |U| / 速度ベクトル U</td><td>m/s</td></tr>
+<tr><td>圧力</td><td>p / Cp</td><td>m²/s² / -</td></tr>
+<tr><td>乱流</td><td>k / omega</td><td>m²/s² / 1/s</td></tr>
+<tr><td>渦</td><td>Vorticity / Q-criterion</td><td>1/s / 1/s²</td></tr>
+<tr><td>空気物性</td><td>密度 rho / 動粘性係数 nu</td><td>kg/m³ / m²/s</td></tr>
+<tr><td>メッシュ</td><td>セル数、ノード数、min/mean SICN、流体体積</td><td>- / m³</td></tr>
+<tr><td>モデル</td><td>L/W/H / Bounds / Tunnel size</td><td>mm</td></tr></table>
+<p>未対応: Cd / Cl、前後軸別ダウンフォース配分、回転タイヤ、y+評価、非定常過渡CFD。</p>
+
+<h2 id="s17">17. 既存解析フォルダの再読込</h2>
+<p>LJM_CFD_mesh_* または旧 AutoCFD_mesh_* を再読込できます。solver_report.jsonが必要です。geometry.brep、request.json、mesh.vtu、VTK結果が残っていればCAD / 風洞 / メッシュ / 3D結果を復元できます。</p>
+
+<h2 id="s18">18. 出力ファイルとログ</h2>
+<table><tr><th>ファイル</th><th>内容</th></tr>
+<tr><td>geometry.brep</td><td>解析姿勢を反映したCADスナップショット</td></tr>
+<tr><td>request.json</td><td>Bounds、風洞余白、Near/Far、姿勢等</td></tr>
+<tr><td>generation.log / error.txt</td><td>Gmshメッシュ生成ログ / エラー</td></tr>
+<tr><td>mesh.msh / mesh.vtu</td><td>OpenFOAM変換用 / GUI表示用メッシュ</td></tr>
+<tr><td>report.json</td><td>セル数、SICN、体積、patch情報</td></tr>
+<tr><td>openfoam_case/</td><td>OpenFOAMケース</td></tr>
+<tr><td>openfoam_check.log / openfoam_error.txt</td><td>変換・checkMeshログ / エラー</td></tr>
+<tr><td>solver.log / solver_error.txt / solver_report.json</td><td>ソルバーログ / エラー / 収束・物性・荷重</td></tr>
+<tr><td>aero_forces_report.json</td><td>forces.datから集計した空力荷重</td></tr>
+<tr><td>result_export.log / result_export_report.json</td><td>foamToVTKログ / VTK情報</td></tr></table>
+
+<h2 id="s19">19. トラブルシューティング</h2>
+<table><tr><th>症状</th><th>確認 / 対策</th></tr>
+<tr><td>STEPが読めない</td><td>閉じたソリッドか確認し、CAD側で修復・単純化。</td></tr>
+<tr><td>メッシュ生成失敗</td><td>generation.log / error.txtを確認。Nearを大きくし、不要な小面・交差・密閉空洞を整理。</td></tr>
+<tr><td>min SICNが低い</td><td>Near/Farを見直し、極小面や狭い隙間を単純化。</td></tr>
+<tr><td>OpenFOAM変換失敗</td><td>WSL2、OpenFOAM、gmshToFoam、checkMeshを確認。openfoam_check.log参照。</td></tr>
+<tr><td>CFD途中失敗</td><td>solver.log / solver_error.txtを確認。</td></tr>
+<tr><td>未収束</td><td>Iterationsだけでなくメッシュ品質と流れ場の妥当性を確認。</td></tr>
+<tr><td>3D結果が使えない</td><td>solver_report.jsonが収束状態か確認。</td></tr>
+<tr><td>空力荷重が「-」</td><td>aero_forces_report.json / forces.datを確認。</td></tr></table>
+
+<h2 id="s20">20. Beta版の制限事項と推奨運用</h2>
+<ul><li>境界層プリズムなし。</li><li>Wheel Rotation無効。</li><li>Wind Yaw / Pitch / AoA無効。モデル側を回転。</li><li>Internal Flow未完成。</li><li>Cd / Cl未算出。</li><li>定常RANSのため非定常渦放出・時間変動を直接評価しない。</li><li>擬似スモークは定常速度場の流線表示。</li><li>絶対値より同一条件でのA/B比較を優先。</li></ul>
+<h3>推奨する比較方法</h3>
+<ol><li>速度、風洞倍率、Ground、温度、圧力、乱流強度を揃える。</li><li>Mesh QualityとNear/Farを揃える。</li><li>両方とも収束させる。</li><li>荷重差とCp / 床下速度 / Wake / Q-criterionの変化を併せて確認。</li><li>小さな差はFine / Very Fineで再確認。</li></ol>
+
+<h2 id="appendix">付録</h2>
+<h3>初期値</h3>
+<table><tr><th>項目</th><th>初期値</th></tr><tr><td>Yaw / Pitch / Roll</td><td>0° / 0° / 0°</td></tr><tr><td>風洞 前/後/左右/上/下</td><td>3.0L / 6.0L / 3.0W / 3.0H / 0.25H</td></tr><tr><td>Vehicle Speed</td><td>200 km/h</td></tr><tr><td>Temperature / Pressure</td><td>25 °C / 101.325 kPa</td></tr><tr><td>Ground</td><td>Moving</td></tr><tr><td>Turbulence intensity</td><td>1.0 %</td></tr><tr><td>Iterations</td><td>50</td></tr><tr><td>Mesh Quality</td><td>Normal</td></tr></table>
+<h3>ショートカット</h3>
+<table><tr><th>操作</th><th>機能</th></tr><tr><td>Ctrl+O</td><td>STEPを開く</td></tr><tr><td>Ctrl+Q</td><td>終了</td></tr><tr><td>F</td><td>モデルへフィット</td></tr><tr><td>Home</td><td>Homeビュー</td></tr></table>
+<h3>フィードバック時に有効な情報</h3>
+<ul><li>ソフト名とバージョン</li><li>Windowsバージョン、CPU、メモリ</li><li>WSL distroとOpenFOAM version</li><li>問題が起きた直前の操作</li><li>エラーダイアログのスクリーンショット</li><li>generation.log / openfoam_check.log / solver.log / result_export.log</li><li>該当する *_error.txt</li><li>request.json / report.json / solver_request.json / solver_report.json</li></ul>
+<div class="note">ログやパスにはユーザー名やフォルダ名が含まれる場合があります。公開投稿前に機密情報を確認してください。</div>
+
+<div class="screen-only mt-12 border-t border-gray-700 pt-8 flex flex-wrap gap-4">
+<a href="ljm-cfd-docs.html" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-5 rounded-md">ドキュメント一覧へ</a>
+<button onclick="window.print()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-md"><i class="fa-solid fa-file-pdf mr-2"></i>PDFとして保存</button>
+</div>
+</article>
+</div>
+</main>
+<footer class="screen-only bg-black py-6 mt-10"><p class="text-center text-sm text-gray-500">&copy; 2026 Lunatech JAPAN Modify. All Rights Reserved.</p></footer>
+<script>
+if(location.hash==="#print"){setTimeout(()=>window.print(),500);}
+</script>
+</body>
+</html>
