@@ -15,6 +15,7 @@
         .accent-color { color: #EF4444; }
         .section-bg { background-color: #1F2937; }
         .panel { background: linear-gradient(145deg, rgba(31,41,55,.98), rgba(17,24,39,.98)); border: 1px solid #374151; }
+        .anchor-section { scroll-margin-top: 96px; }
         .grid-bg {
             background-image:
               linear-gradient(rgba(239,68,68,.07) 1px, transparent 1px),
@@ -52,7 +53,7 @@
             <h1 class="text-5xl md:text-7xl font-black tracking-tight">LJM<span class="accent-color">.CFD</span></h1>
             <p class="mt-4 text-2xl md:text-3xl font-bold text-gray-200">Beta 0.6.2.3</p>
             <p class="mt-6 text-lg md:text-xl text-gray-400 max-w-3xl mx-auto" data-lang-key="hero_desc">
-                自動車の外部空力解析を、できるだけシンプルな操作で実行するために開発中のCFDソフトウェアです。
+                現在開発中の未完成Beta版です。自動車の外部空力解析を、できるだけシンプルな操作で実行することを目的に開発しています。
             </p>
             <div class="mt-9 flex flex-col sm:flex-row justify-center gap-4">
                 <a href="https://github.com/EzpaNoLy0o/LunatechJapanModify.github.io/releases" class="bg-red-600 hover:bg-red-700 text-white font-black py-4 px-8 rounded-md text-lg transition" target="_blank" rel="noopener">
@@ -61,6 +62,96 @@
                 <a href="#requirements" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-bold py-4 px-8 rounded-md text-lg transition" data-lang-key="requirements_btn">動作環境を見る</a>
             </div>
             <p class="mt-4 text-sm text-gray-500" data-lang-key="release_note">配布ファイルがまだ公開されていない場合、Releasesページには最新版が表示されません。</p>
+        </div>
+    </section>
+
+
+    <section class="py-12 bg-gray-900 border-b border-gray-800">
+        <div class="container mx-auto px-6 max-w-5xl">
+            <div class="panel rounded-xl p-7 md:p-9">
+                <div class="flex items-start gap-4">
+                    <div class="text-red-500 text-3xl pt-1"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-black mb-3">ご利用前に必ずお読みください</h2>
+                        <p class="text-gray-300 leading-relaxed">
+                            LJM.CFD.Beta. 0.6.2.3 は、現在も開発・検証を継続している<strong class="text-white">未完成のBeta版</strong>です。
+                            完成版ではなく、機能・操作方法・対応形式・解析処理は今後の更新で変更される場合があります。
+                            安定動作や解析精度を保証する正式版ではありません。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="mt-7 panel rounded-xl p-6 md:p-7" aria-label="LJM CFD page table of contents">
+                <h3 class="font-black text-lg mb-4"><i class="fa-solid fa-list mr-2 text-red-500"></i>目次</h3>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                    <a href="#status" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">01. 開発状況について</a>
+                    <a href="#formats" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">02. データ形式・KN5について</a>
+                    <a href="#accuracy" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">03. 計算結果・精度について</a>
+                    <a href="#requirements" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">04. 必要・推奨PCスペック</a>
+                    <a href="#distribution" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">05. 2次配布について</a>
+                    <a href="#feedback" class="bg-gray-800 hover:bg-gray-700 rounded-md px-4 py-3">06. フィードバック方法</a>
+                </div>
+            </nav>
+        </div>
+    </section>
+
+    <section id="status" class="anchor-section py-14">
+        <div class="container mx-auto px-6 max-w-5xl">
+            <h2 class="text-3xl font-black mb-5"><span class="text-red-500">01.</span> 開発状況について</h2>
+            <div class="panel rounded-xl p-7 md:p-8">
+                <p class="text-gray-300 leading-relaxed">
+                    本ソフトは現在開発中であり、LJM.CFD.Beta. 0.6.2.3 は完成版ではありません。
+                    実際の利用環境・PC構成・入力データによっては、起動、読込、メッシュ生成、解析、可視化などの一部機能が正常に動作しない場合があります。
+                    Beta版は、実際の利用環境での動作確認や改善点の収集を目的として無料公開するものです。
+                </p>
+                <p class="text-gray-400 leading-relaxed mt-4">
+                    将来の更新では、画面構成、解析手順、対応ファイル、設定項目、計算処理、出力内容等が予告なく変更される場合があります。
+                    Beta版のプロジェクトや解析データが将来バージョンで完全に互換となることも保証していません。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="formats" class="anchor-section py-14 bg-gray-900">
+        <div class="container mx-auto px-6 max-w-5xl">
+            <h2 class="text-3xl font-black mb-5"><span class="text-red-500">02.</span> データ形式・KN5について</h2>
+            <div class="panel rounded-xl p-7 md:p-8 space-y-4">
+                <p class="text-gray-300 leading-relaxed">
+                    現時点ではSTEP / STP等を中心に開発・検証を進めていますが、すべてのCADデータ、モデル構造、書き出し条件で完璧に動作することを保証するものではありません。
+                    同じ拡張子であっても、作成ソフト、モデルの構造、面の状態、ソリッド化の状態、データ量等によって読込やメッシュ生成に失敗する場合があります。
+                </p>
+                <div class="border border-yellow-700/60 bg-yellow-950/30 rounded-lg p-5">
+                    <h3 class="font-black text-yellow-300 mb-2"><i class="fa-solid fa-wrench mr-2"></i>KN5形式について</h3>
+                    <p class="text-yellow-100/90 leading-relaxed">
+                        KN5形式への対応は現在調整中です。現段階ではKN5データに対する完全な互換性・安定動作を保証しておらず、
+                        モデルによっては読み込み、形状変換、解析用データの生成等が意図した結果にならない場合があります。
+                        KN5関連機能は今後の更新で継続的に改善する予定です。
+                    </p>
+                </div>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    入力データが読み込めない場合は、別形式への変換、CAD側での形状修復、不要部品の削除、モデルの単純化などが必要になる場合があります。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="accuracy" class="anchor-section py-14">
+        <div class="container mx-auto px-6 max-w-5xl">
+            <h2 class="text-3xl font-black mb-5"><span class="text-red-500">03.</span> 計算結果・精度について</h2>
+            <div class="panel rounded-xl p-7 md:p-8">
+                <p class="text-gray-300 leading-relaxed">
+                    本Beta版で得られる計算結果は、風洞試験、実測値、高精度な商用CFD、十分に検証された解析環境と同等の正確性を保証するものではありません。
+                    出力されるDrag、Downforce、Lift、Side Force、圧力、流速、Cp、渦度等の値は、<strong class="text-white">あくまで参考値・傾向確認用の値</strong>として扱ってください。
+                </p>
+                <p class="text-gray-400 leading-relaxed mt-4">
+                    CFD結果は、モデル形状、メッシュ品質、風洞寸法、境界条件、乱流モデル、反復回数、収束状態などによって変化します。
+                    特に本Beta版は開発途中の簡易解析環境であるため、絶対値だけで判断せず、同一条件下でのA/B比較や形状変更前後の傾向確認を中心に利用することを推奨します。
+                </p>
+                <div class="mt-5 border-l-4 border-red-500 bg-red-950/20 p-5 rounded-r-lg text-red-100">
+                    車両安全性、構造強度、競技・公道での安全判断、法規適合、製品性能保証など、重大な判断を本ソフトの計算結果だけで行わないでください。
+                </div>
+            </div>
         </div>
     </section>
 
@@ -102,7 +193,8 @@
             </div>
         </div>
     </section>
-\n    <section class="py-16 bg-gray-900">
+
+    <section id="installation" class="py-16 bg-gray-900">
         <div class="container mx-auto px-6 max-w-5xl">
             <h2 class="text-3xl md:text-4xl font-black mb-8 text-center" data-lang-key="install_title">INSTALLATION</h2>
             <div class="grid md:grid-cols-3 gap-6">
@@ -113,39 +205,80 @@
         </div>
     </section>
 
-    <section id="requirements" class="py-16">
-        <div class="container mx-auto px-6 max-w-5xl">
+
+    <section id="requirements" class="anchor-section py-16">
+        <div class="container mx-auto px-6 max-w-6xl">
+            <h2 class="text-3xl md:text-4xl font-black mb-4 text-center"><span class="text-red-500">04.</span> 必要・推奨PCスペック</h2>
+            <p class="text-gray-400 text-center max-w-3xl mx-auto mb-8">
+                下記はBeta 0.6.2.3の目安です。解析可能なモデル規模はメッシュ密度・形状の複雑さ・セル数によって大きく変わります。
+                最低環境は「起動・小規模解析が可能な目安」であり、すべての解析を保証するものではありません。
+            </p>
             <div class="panel rounded-xl overflow-hidden">
-                <div class="p-7 border-b border-gray-700">
-                    <h2 class="text-2xl md:text-3xl font-black" data-lang-key="requirements_title">動作環境 / REQUIREMENTS</h2>
-                </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <tbody class="divide-y divide-gray-700">
-                            <tr><th class="p-5 text-gray-300 w-1/3">OS</th><td class="p-5 text-gray-400">Windows 10 / 11 64-bit</td></tr>
-                            <tr><th class="p-5 text-gray-300">Python</th><td class="p-5 text-gray-400" data-lang-key="python_req">配布版では個別インストール不要の構成を予定</td></tr>
-                            <tr><th class="p-5 text-gray-300">CFD</th><td class="p-5 text-gray-400">WSL2 + Ubuntu + OpenFOAM</td></tr>
-                            <tr><th class="p-5 text-gray-300" data-lang-key="version_label">公開バージョン</th><td class="p-5 text-gray-400">LJM.CFD.Beta. 0.6.2.3</td></tr>
-                            <tr><th class="p-5 text-gray-300" data-lang-key="price_label">価格</th><td class="p-5 font-bold text-green-400" data-lang-key="price_value">無料 / FREE</td></tr>
+                    <table class="w-full text-left min-w-[850px]">
+                        <thead class="bg-gray-800">
+                            <tr><th class="p-4">項目</th><th class="p-4">必要スペックの目安</th><th class="p-4">推奨スペック</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700 text-gray-300">
+                            <tr><th class="p-4 text-white">OS</th><td class="p-4">Windows 10 / 11 64-bit</td><td class="p-4">Windows 11 64-bit 最新更新適用</td></tr>
+                            <tr><th class="p-4 text-white">CPU</th><td class="p-4">64-bit x86 CPU、4コア / 8スレッド程度</td><td class="p-4">8コア / 16スレッド以上（Core i7 / Ryzen 7クラス以上を目安）</td></tr>
+                            <tr><th class="p-4 text-white">メモリ</th><td class="p-4">16 GB</td><td class="p-4">32 GB以上。大規模モデル・Fine/Very Fine解析では64 GB以上を推奨</td></tr>
+                            <tr><th class="p-4 text-white">ストレージ</th><td class="p-4">SSD、空き30 GB以上</td><td class="p-4">NVMe SSD、空き100 GB以上。解析ケース保存用に余裕を確保</td></tr>
+                            <tr><th class="p-4 text-white">GPU</th><td class="p-4">最新ドライバが利用できるOpenGL対応GPU。軽量表示は内蔵GPUでも動作する場合あり</td><td class="p-4">専用GPU、VRAM 4 GB以上（3D結果表示を快適にする目的）</td></tr>
+                            <tr><th class="p-4 text-white">GPU計算</th><td class="p-4" colspan="2">現Beta版のOpenFOAM計算は主にCPU側で処理します。高性能GPUを搭載してもCFD計算時間が同じ割合で短縮される保証はありません。</td></tr>
+                            <tr><th class="p-4 text-white">画面</th><td class="p-4">1366×768以上</td><td class="p-4">1920×1080以上</td></tr>
+                            <tr><th class="p-4 text-white">仮想化</th><td class="p-4">WSL2が利用可能で、UEFI/BIOSの仮想化機能が有効</td><td class="p-4">同左</td></tr>
+                            <tr><th class="p-4 text-white">CFD環境</th><td class="p-4">WSL2 + Ubuntu + OpenFOAM</td><td class="p-4">WSL2 + Ubuntu 24.04 + OpenFOAM Foundation 14を想定</td></tr>
+                            <tr><th class="p-4 text-white">Python</th><td class="p-4" colspan="2">Setup.exe配布版ではPythonランタイムをアプリ側へ同梱し、利用者による個別インストールを不要にする構成を予定しています。</td></tr>
+                            <tr><th class="p-4 text-white">インターネット</th><td class="p-4">初回ダウンロード・WSL/OpenFOAM導入時に必要</td><td class="p-4">安定したブロードバンド接続</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+            <div class="mt-6 grid md:grid-cols-2 gap-5">
+                <div class="bg-gray-900 border border-gray-700 rounded-lg p-5">
+                    <h3 class="font-black text-white mb-2">CPUについて</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">CFD計算はCPU負荷が中心です。ただし、メッシュ生成や一部処理がすべてのコアを常時100%使用するとは限りません。高クロックと十分なコア数の両方が有利です。</p>
+                </div>
+                <div class="bg-gray-900 border border-gray-700 rounded-lg p-5">
+                    <h3 class="font-black text-white mb-2">メモリについて</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">必要RAM容量はセル数に強く依存します。16 GB環境では複雑な車両モデルや高密度メッシュで不足する可能性があるため、本格利用では32～64 GBを推奨します。</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="py-16 bg-gray-900">
+    <section id="distribution" class="anchor-section py-14 bg-gray-900">
+        <div class="container mx-auto px-6 max-w-5xl">
+            <h2 class="text-3xl font-black mb-5"><span class="text-red-500">05.</span> 2次配布について</h2>
+            <div class="panel rounded-xl p-7 md:p-8">
+                <p class="text-gray-300 leading-relaxed">
+                    LJM.CFD本体、インストーラー、実行ファイル、配布ZIP、またはそれらを改変・再パッケージしたものを、
+                    <strong class="text-white">作者の事前許可なく第三者へ転載・2次配布することを禁止します。</strong>
+                    ファイル共有サービス、別サイト、SNS、掲示板、クラウドストレージ等への再アップロードも含みます。
+                </p>
+                <p class="text-gray-400 leading-relaxed mt-4">
+                    他の方へ紹介する場合は、ファイルそのものを渡すのではなく、このLJM.CFD公式配布ページのURLを共有してください。
+                    なお、OpenFOAM等の第三者ソフトウェア・ライブラリについては、それぞれの権利者が定めるライセンス条件が適用されます。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="feedback" class="anchor-section py-16">
         <div class="container mx-auto px-6 max-w-4xl text-center">
-            <i class="fa-solid fa-comments text-4xl text-red-500 mb-5"></i>
+            <div class="text-red-500 font-black text-xl mb-2">06.</div>
+            <i class="fa-brands fa-x-twitter text-4xl text-red-500 mb-5"></i>
             <h2 class="text-3xl font-black mb-4" data-lang-key="feedback_title">Beta版へのフィードバックを募集しています</h2>
-            <p class="text-gray-400 max-w-2xl mx-auto mb-7" data-lang-key="feedback_desc">不具合、使いにくい点、欲しい機能、解析結果についてのご意見を今後の開発に活用します。</p>
-            <a href="contact.html" class="inline-block bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-7 rounded-md" data-lang-key="feedback_btn">フィードバック・お問い合わせ</a>
+            <p class="text-gray-400 max-w-2xl mx-auto mb-7" data-lang-key="feedback_desc">不具合、使いにくい点、欲しい機能、対応してほしいデータ形式、解析結果についてのご意見を今後の開発に活用します。SNS（X）へ投稿する場合は、【#LJM.CFD】を付けて投稿していただくことを推奨します。投稿にはソフトのバージョン、PC構成、入力形式、発生した現象などを添えていただくと改善に役立ちます。</p>
+            <a href="contact.html" class="inline-block bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-7 rounded-md" data-lang-key="feedback_btn">お問い合わせフォーム</a>
+            <div class="mt-5 inline-block border border-gray-700 bg-gray-900 rounded-lg px-5 py-3 text-gray-300"><i class="fa-brands fa-x-twitter mr-2"></i>推奨表記: <strong class="text-white">#LJM.CFD</strong></div>
         </div>
     </section>
 
     <section class="py-10 border-t border-gray-800">
         <div class="container mx-auto px-6 max-w-4xl">
-            <p class="text-sm text-gray-500 leading-relaxed" data-lang-key="beta_notice"><strong class="text-gray-300">Beta Notice:</strong> 本ソフトは開発中のBeta版です。解析結果の妥当性は使用条件・メッシュ・境界条件等に依存します。重要な設計判断では、実験・他手法による検証を併用してください。利用条件・ライセンスは配布時の案内をご確認ください。</p>
+            <p class="text-sm text-gray-500 leading-relaxed"><strong class="text-gray-300">Beta Notice:</strong> ダウンロード・利用前に、本ページ上部の「開発状況」「データ形式」「計算結果・精度」「PCスペック」「2次配布」「フィードバック」の各注意事項をご確認ください。</p>
         </div>
     </section>
 </main>
@@ -159,7 +292,7 @@ const translations = {
     ja: {
         nav_home:"HOME", nav_services:"事業内容", nav_company:"会社概要", nav_products:"商品ラインナップ", nav_cfd:"LJM CFD", nav_estimate:"自動見積もり", nav_contact:"お問い合わせ",
         beta_badge:"FREE BETA / DEVELOPMENT BUILD",
-        hero_desc:"自動車の外部空力解析を、できるだけシンプルな操作で実行するために開発中のCFDソフトウェアです。",
+        hero_desc:"現在開発中の未完成Beta版です。自動車の外部空力解析を、できるだけシンプルな操作で実行することを目的に開発しています。",
         download_btn:"無料ダウンロード / GitHub Releases", requirements_btn:"動作環境を見る", release_note:"配布ファイルがまだ公開されていない場合、Releasesページには最新版が表示されません。",
         feature1_title:"自動車向けCFD", feature1_desc:"車体・エアロパーツの外部流れを対象に、メッシュ作成からOpenFOAM解析までをGUIから実行します。",
         feature2_title:"流れを可視化", feature2_desc:"流速、圧力、Cp、流線、渦度、Q-criterionなどの結果を3Dで確認できます。",
