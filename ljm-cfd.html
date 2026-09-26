@@ -214,6 +214,43 @@
     </section>
 
 
+
+    <section id="basic-operation" class="anchor-section py-16 bg-gray-900">
+        <div class="container mx-auto px-6 max-w-6xl">
+            <div class="text-center mb-10">
+                <div class="text-red-500 font-black text-sm tracking-wider mb-2">QUICK START</div>
+                <h2 class="text-3xl md:text-4xl font-black">基本操作順序</h2>
+                <p class="text-gray-400 mt-3">Component Wind Tunnelで部品単体を解析する場合の基本フローです。</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-5">
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">01</div><h3 class="font-black mt-2">STEPを読み込む</h3><p class="text-gray-400 text-sm mt-2">解析したい部品のSTEP / STPデータを読み込みます。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">02</div><h3 class="font-black mt-2">モデル姿勢を調整</h3><p class="text-gray-400 text-sm mt-2">風向き自体は変更できないため、計測したい向きに合わせてモデル姿勢から部品を回転させます。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">03</div><h3 class="font-black mt-2">Component Wind Tunnelへ切替</h3><p class="text-gray-400 text-sm mt-2">解析モードを「Component Wind Tunnel」に変更します。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">04</div><h3 class="font-black mt-2">Test Iterationsを設定</h3><p class="text-gray-400 text-sm mt-2">200～1000程度。おすすめは500以上です。収束しない場合は200 → 500 → 1000のように段階的に増やしてください。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">05</div><h3 class="font-black mt-2">外部メッシュ生成・保存</h3><p class="text-gray-400 text-sm mt-2">画面最下部までスクロールして「外部メッシュ生成・保存」を実行します。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">06</div><h3 class="font-black mt-2">OpenFOAMへ変換 + checkMesh</h3><p class="text-gray-400 text-sm mt-2">メッシュ生成完了後に実行し、変換・メッシュチェックが完了するのを待ちます。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">07</div><h3 class="font-black mt-2">CFDテスト計算を開始</h3><p class="text-gray-400 text-sm mt-2">checkMesh完了後、「CFDテスト計算を開始」を実行します。</p></div>
+                <div class="panel rounded-xl p-6"><div class="text-red-500 font-black text-2xl">08</div><h3 class="font-black mt-2">収束結果をVTK変換 / 更新</h3><p class="text-gray-400 text-sm mt-2">計算完了後にVTK変換を行うと、3D流線などの結果表示が可能になります。</p></div>
+            </div>
+
+            <div class="mt-7 grid md:grid-cols-2 gap-5">
+                <div class="border border-gray-700 bg-gray-950 rounded-xl p-6">
+                    <h3 class="font-black mb-2"><i class="fa-solid fa-eye mr-2 text-red-500"></i>結果表示</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">「3D流線を表示」など確認したい項目をクリックすると結果が表示されます。「表示 / 位置合わせ」欄から各項目の表示切替・位置調整が行えます。</p>
+                </div>
+                <div class="border border-gray-700 bg-gray-950 rounded-xl p-6">
+                    <h3 class="font-black mb-2"><i class="fa-solid fa-gauge-high mr-2 text-red-500"></i>空気荷重</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">「空気荷重」欄から荷重情報を確認できます。ただし値は仮想解析による参考値であり、完全な正確性を保証するものではありません。形状比較や傾向確認を中心に利用してください。</p>
+                </div>
+            </div>
+
+            <div class="mt-6 border-l-4 border-yellow-500 bg-yellow-950/20 rounded-r-lg p-5 text-yellow-100/90 text-sm leading-relaxed">
+                Test Iterationsは、多ければ必ず精度が上がるという意味ではありません。十分に収束するための最大反復回数です。収束前に終了する場合は反復回数を増やしてください。
+            </div>
+        </div>
+    </section>
+
     <section class="py-16 border-t border-gray-800">
         <div class="container mx-auto px-6 max-w-5xl">
             <div class="panel rounded-xl p-8 md:p-10 flex flex-col md:flex-row gap-8 items-center justify-between">
