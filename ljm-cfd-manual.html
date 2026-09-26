@@ -39,7 +39,7 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{col
 <aside class="toc screen-only lg:sticky lg:top-28 lg:self-start panel">
 <div class="bg-gray-900 border border-gray-700 rounded-xl p-4 max-h-[76vh] overflow-y-auto">
 <div class="font-black mb-3 text-red-400">目次</div>
-<a href="#s1">1. ソフトの概要</a><a href="#s2">2. 動作環境</a><a href="#s3">3. 初回セットアップ</a>
+<a href="#s0">0. 重要事項・利用条件</a><a href="#s1">1. ソフトの概要</a><a href="#s2">2. 動作環境</a><a href="#s3">3. 初回セットアップ</a>
 <a href="#s4">4. 画面構成</a><a href="#s5">5. 最短手順</a><a href="#s6">6. STEPモデル</a>
 <a href="#s7">7. 解析モード</a><a href="#s8">8. 姿勢と座標系</a><a href="#s9">9. 仮想風洞</a>
 <a href="#s10">10. 流れ条件</a><a href="#s11">11. メッシュ生成</a><a href="#s12">12. OpenFOAM変換</a>
@@ -58,13 +58,43 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{col
 <div class="note"><strong>重要:</strong> 本ソフトはBeta版のCFDプレビュー環境です。解析結果は設計比較・傾向把握の参考として使用し、最終的な安全性・法規適合・構造強度・空力性能の保証には使用しないでください。</div>
 </div>
 
+<h2 id="s0">0. 重要事項・利用条件</h2>
+<div class="note"><strong>必読:</strong> LJM.CFD.Beta. 0.6.2.3 は現在開発中の未完成Beta版です。安定動作、すべてのデータ形式との互換性、解析結果の正確性を保証する正式版ではありません。</div>
+<h3>開発状況</h3>
+<p>本ソフトは継続的に開発・検証中です。機能、UI、対応形式、解析処理、保存形式は今後の更新で変更される場合があります。現在のプロジェクトが将来版で完全に互換となる保証もありません。</p>
+<h3>データ形式とKN5</h3>
+<p>STEP / STP等を中心に検証していますが、同じ拡張子であっても、作成ソフト、モデル構造、面の状態、ソリッド化、データ量等によって読込やメッシュ生成に失敗する場合があります。すべてのデータ形式・すべてのデータで完璧に動作する保証はありません。</p>
+<p><strong>KN5形式への対応は現在調整中です。</strong> 現段階ではKN5データの完全な互換性・安定動作を保証しておらず、読み込み、形状変換、解析用データ生成等が意図した結果にならない場合があります。</p>
+<h3>計算結果の扱い</h3>
+<p>本Beta版の計算結果は、風洞試験、実測値、高精度な商用CFD、十分に検証された解析環境と同等の正確性を保証しません。Drag、Downforce、Lift、Side Force、圧力、流速、Cp等は<strong>参考値・傾向確認用</strong>として扱い、重要な設計・安全判断を本ソフトの値だけで行わないでください。</p>
+<h3>2次配布の禁止</h3>
+<p>LJM.CFD本体、インストーラー、実行ファイル、配布ZIP、改変版・再パッケージ版を、作者の事前許可なく第三者へ転載・2次配布することを禁止します。紹介する場合は公式配布ページのURLを共有してください。第三者ソフトウェアは各権利者のライセンス条件に従います。</p>
+<h3>フィードバック</h3>
+<p>ソフトウェアに関する不具合、要望、対応してほしい形式、解析結果への意見は、SNS（X）への投稿も歓迎します。投稿時は<strong>【#LJM.CFD】</strong>を付けていただくことを推奨します。可能であれば、バージョン、PC構成、入力形式、発生した現象、スクリーンショット等も添えてください。</p>
+
 <h2 id="s1">1. ソフトの概要</h2>
 <p>LJM.CFD.Beta. 0.6.2.3 は、自動車および自動車部品の外部流れ解析を、OpenFOAMの設定ファイルを直接編集せずGUIから実行するためのBeta版ツールです。CAD読込、風洞領域、四面体メッシュ、OpenFOAM変換、定常RANS計算、空力荷重、3D可視化を一連の操作として扱います。</p>
 <ul><li>STEP / STP形式の3D CAD読込</li><li>Yaw / Pitch / Rollによるモデル姿勢変更</li><li>モデル寸法倍率での仮想風洞生成</li><li>Gmshによる外部流体四面体メッシュ</li><li>WSL2上のOpenFOAMへ変換・checkMesh</li><li>steady incompressibleFluid + k-omega SSTによるCFDプレビュー</li><li>Drag / Downforce / Lift / Side Force</li><li>速度、圧力、k、omega、渦度、Q-criterionの3D可視化</li></ul>
 <div class="note">0.6.2.3では境界層プリズムがないため、絶対値よりも形状変更前後の傾向比較を中心に使用してください。</div>
 
 <h2 id="s2">2. 動作環境と必要ソフト</h2>
-<table><tr><th>項目</th><th>必要条件 / 推奨</th></tr><tr><td>OS</td><td>Windows 10 / 11。OpenFOAM連携はWindows + WSL2を前提。</td></tr><tr><td>Python</td><td>ソース版はPython 3.11。配布EXE版では個別インストール不要の構成を予定。</td></tr><tr><td>WSL</td><td>WSL2 / Ubuntu 24.04想定。</td></tr><tr><td>OpenFOAM</td><td>OpenFOAM Foundation 14系。gmshToFoam / checkMesh / foamRun / foamToVTKが利用可能であること。</td></tr><tr><td>CAD入力</td><td>STEP (*.step, *.stp)</td></tr></table>
+<p>以下はBeta 0.6.2.3の目安です。最低環境は小規模解析・起動確認を想定した目安であり、すべてのモデルやメッシュ設定での動作を保証するものではありません。</p>
+<table>
+<tr><th>項目</th><th>必要スペックの目安</th><th>推奨スペック</th></tr>
+<tr><td>OS</td><td>Windows 10 / 11 64-bit</td><td>Windows 11 64-bit 最新更新適用</td></tr>
+<tr><td>CPU</td><td>64-bit x86 CPU、4コア / 8スレッド程度</td><td>8コア / 16スレッド以上（Core i7 / Ryzen 7クラス以上を目安）</td></tr>
+<tr><td>メモリ</td><td>16 GB</td><td>32 GB以上。大規模モデルやFine / Very Fineでは64 GB以上推奨</td></tr>
+<tr><td>ストレージ</td><td>SSD、空き30 GB以上</td><td>NVMe SSD、空き100 GB以上。解析ケース保存用に余裕を確保</td></tr>
+<tr><td>GPU</td><td>最新ドライバが利用できるOpenGL対応GPU。軽量表示は内蔵GPUでも動作する場合あり</td><td>専用GPU、VRAM 4 GB以上を推奨</td></tr>
+<tr><td>GPU計算</td><td colspan="2">現Beta版のOpenFOAM計算は主にCPU側で処理します。高性能GPU搭載による大幅な計算短縮は保証されません。</td></tr>
+<tr><td>画面</td><td>1366×768以上</td><td>1920×1080以上</td></tr>
+<tr><td>仮想化</td><td>WSL2が利用可能で、UEFI / BIOSの仮想化機能が有効</td><td>同左</td></tr>
+<tr><td>WSL / Linux</td><td>WSL2 + Ubuntu</td><td>WSL2 + Ubuntu 24.04</td></tr>
+<tr><td>OpenFOAM</td><td>Foundation 14系を想定</td><td>gmshToFoam / checkMesh / foamRun / foamToVTKが利用可能な環境</td></tr>
+<tr><td>Python</td><td colspan="2">ソース版はPython 3.11。Setup.exe配布版ではランタイム同梱により個別インストール不要の構成を予定。</td></tr>
+<tr><td>CAD入力</td><td>STEP (*.step, *.stp)を中心に検証</td><td>閉じたソリッド、不要部品を整理した軽量モデルを推奨</td></tr>
+</table>
+<div class="note">必要メモリ量と計算時間はセル数・形状の複雑さに強く依存します。CPU使用率が常に100%になるとは限らず、メッシュ生成や前後処理には単一スレッド寄りの処理も含まれます。</div>
 
 <h2 id="s3">3. 初回セットアップ</h2>
 <ol><li>配布ファイルをローカルフォルダへ配置します。</li><li>ソース版では <code>setup_windows.bat</code> を初回実行し、Windows側Python環境を構築します。Setup.exe配布版ではインストーラーの案内に従います。</li><li>必要に応じてメッシュ / OpenFOAM / VTKの自己テストを実行します。</li><li>LJM.CFDを起動し、ウィンドウタイトルに対象バージョンが表示されることを確認します。</li></ol>
@@ -164,6 +194,7 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}.accent{col
 <tr><td>空力荷重が「-」</td><td>aero_forces_report.json / forces.datを確認。</td></tr></table>
 
 <h2 id="s20">20. Beta版の制限事項と推奨運用</h2>
+<div class="note"><strong>KN5:</strong> KN5形式への対応は現在調整中で、完全な互換性・安定動作は保証していません。</div>
 <ul><li>境界層プリズムなし。</li><li>Wheel Rotation無効。</li><li>Wind Yaw / Pitch / AoA無効。モデル側を回転。</li><li>Internal Flow未完成。</li><li>Cd / Cl未算出。</li><li>定常RANSのため非定常渦放出・時間変動を直接評価しない。</li><li>擬似スモークは定常速度場の流線表示。</li><li>絶対値より同一条件でのA/B比較を優先。</li></ul>
 <h3>推奨する比較方法</h3>
 <ol><li>速度、風洞倍率、Ground、温度、圧力、乱流強度を揃える。</li><li>Mesh QualityとNear/Farを揃える。</li><li>両方とも収束させる。</li><li>荷重差とCp / 床下速度 / Wake / Q-criterionの変化を併せて確認。</li><li>小さな差はFine / Very Fineで再確認。</li></ol>
