@@ -92,14 +92,18 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <h3 class="text-2xl md:text-3xl font-black">LJM_CFD_Beta_0.6.2.3_Setup.exe</h3>
 <p class="text-gray-400 mt-2">Windows 10 / 11 64-bit</p>
 </div>
-<span class="px-3 py-2 rounded-full bg-yellow-950/50 border border-yellow-700 text-yellow-300 text-sm font-bold">公開準備中</span>
+<span class="px-3 py-2 rounded-full bg-green-950/50 border border-green-700 text-green-300 text-sm font-bold"><i class="fa-solid fa-circle-check mr-1"></i>ダウンロード可能</span>
 </div>
 <div class="mt-7 p-5 rounded-lg bg-gray-900 border border-gray-700">
 <label class="flex gap-3 items-start text-sm text-gray-300 mb-3"><input id="agree-beta" type="checkbox" class="mt-1 accent-red-600"><span>本ソフトが未完成Beta版であり、計算結果は参考値であることを確認しました。</span></label>
 <label class="flex gap-3 items-start text-sm text-gray-300"><input id="agree-redistribution" type="checkbox" class="mt-1 accent-red-600"><span>作者の事前許可なく2次配布しないことを確認しました。</span></label>
 </div>
-<button id="installer-button" disabled class="disabled-download mt-6 w-full bg-red-600 text-white font-black py-4 px-6 rounded-md text-lg"><i class="fa-solid fa-download mr-2"></i>Setup.exe は現在公開準備中です</button>
-<p class="mt-4 text-xs text-gray-500">正式なSetup.exe公開後、このボタンを直接ダウンロードに切り替えます。現在GitHub Releasesには公開ファイルがありません。</p>
+<button id="installer-button" disabled class="disabled-download mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 px-6 rounded-md text-lg transition"><i class="fa-solid fa-download mr-2"></i>注意事項を確認するとダウンロードできます</button>
+<div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+      <a href="https://github.com/EzpaNoLy0o/LunatechJapanModify.github.io/releases/tag/v0.6.2.3-beta" target="_blank" rel="noopener noreferrer" class="text-red-400 hover:text-red-300"><i class="fa-brands fa-github mr-1"></i>GitHub Releaseを確認</a>
+      <a href="https://github.com/EzpaNoLy0o/LunatechJapanModify.github.io/releases/download/v0.6.2.3-beta/LJM_CFD_Beta_0.6.2.3_Setup.sha256.txt" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-shield-halved mr-1"></i>SHA-256ファイルをダウンロード</a>
+    </div>
+    <p class="mt-3 text-xs text-gray-500">公式配布元はこのページからリンクしているGitHub Releaseです。ミラーサイトや第三者による再配布ファイルは使用しないでください。</p>
 </div>
 
 <div class="space-y-5">
@@ -110,10 +114,10 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <div class="text-gray-500 text-xs mb-1">CHANNEL</div><div class="font-black text-xl text-yellow-300">Development Beta</div>
 </div>
 <div class="panel rounded-xl p-6">
-<div class="text-gray-500 text-xs mb-1">SHA-256</div><div class="font-mono text-sm text-gray-300 break-all">公開時に掲載</div>
+<div class="text-gray-500 text-xs mb-1">SHA-256</div><div class="font-mono text-sm text-gray-300 break-all">8bbdc6efeff52fb00051e13151951802cd5c91f210576349bfb76a5ef5c08ce1</div>
 </div>
 <div class="panel rounded-xl p-6">
-<div class="text-gray-500 text-xs mb-1">FILE SIZE</div><div class="font-black text-xl">公開時に掲載</div>
+<div class="text-gray-500 text-xs mb-1">FILE SIZE</div><div class="font-black text-xl">209.5 MiB <span class="text-sm text-gray-500 font-normal">(219,644,717 bytes)</span></div>
 </div>
 </div>
 </div>
@@ -131,7 +135,8 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <tr><th class="p-4">主な用途</th><td class="p-4 text-gray-300">自動車・エアロパーツの外部流れCFDプレビュー、形状比較、傾向確認</td></tr>
 <tr><th class="p-4">主な入力</th><td class="p-4 text-gray-300">STEP / STPを中心に検証。KN5は現在調整中。</td></tr>
 <tr><th class="p-4">CFD Backend</th><td class="p-4 text-gray-300">WSL2 + Ubuntu + OpenFOAM Foundation 14系を想定</td></tr>
-<tr><th class="p-4">配布状態</th><td class="p-4 text-yellow-300 font-bold">Setup.exe 公開準備中</td></tr>
+<tr><th class="p-4">配布状態</th><td class="p-4 text-green-300 font-bold">公開中 / ダウンロード可能</td></tr>
+<tr><th class="p-4">Release</th><td class="p-4"><a href="https://github.com/EzpaNoLy0o/LunatechJapanModify.github.io/releases/tag/v0.6.2.3-beta" target="_blank" rel="noopener noreferrer" class="text-red-400 hover:text-red-300">v0.6.2.3-beta <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-xs"></i></a></td></tr>
 </tbody>
 </table></div>
 </div>
@@ -172,7 +177,7 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <div class="panel rounded-xl p-6"><i class="fa-solid fa-terminal text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">WSL2</h3><p class="text-gray-400 text-sm mt-2">OpenFOAM実行環境として使用します。初回導入時に管理者権限や再起動が必要になる場合があります。</p></div>
 <div class="panel rounded-xl p-6"><i class="fa-brands fa-ubuntu text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Ubuntu</h3><p class="text-gray-400 text-sm mt-2">Ubuntu 24.04を想定しています。</p></div>
 <div class="panel rounded-xl p-6"><i class="fa-solid fa-wind text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">OpenFOAM</h3><p class="text-gray-400 text-sm mt-2">OpenFOAM Foundation 14系を想定。gmshToFoam / checkMesh / foamRun / foamToVTKを利用します。</p></div>
-<div class="panel rounded-xl p-6"><i class="fa-brands fa-python text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Python</h3><p class="text-gray-400 text-sm mt-2">Setup.exe配布版はPythonランタイム同梱方式を予定し、利用者による個別インストールを不要にします。</p></div>
+<div class="panel rounded-xl p-6"><i class="fa-brands fa-python text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Python</h3><p class="text-gray-400 text-sm mt-2">Setup.exe配布版にはPythonランタイムを同梱しており、利用者によるPythonの個別インストールは不要です。</p></div>
 <div class="panel rounded-xl p-6"><i class="fa-solid fa-globe text-3xl text-red-500 mb-3"></i><h3 class="font-black text-lg">Internet</h3><p class="text-gray-400 text-sm mt-2">ダウンロードや初回のWSL / OpenFOAM環境構築時に必要です。</p></div>
 </div>
 </div>
@@ -245,20 +250,17 @@ body{font-family:'Inter',sans-serif;background:#111827;color:#F3F4F6}
 <a class="x-feedback-float" href="https://twitter.com/intent/tweet?text=%23LJMCFD%0A%0ALJM.CFD%20Beta%E3%81%B8%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%89%E3%83%90%E3%83%83%E3%82%AF%EF%BC%9A%0A" target="_blank" rel="noopener noreferrer" aria-label="Xに #LJMCFD を付けてフィードバックを投稿"><i class="fa-brands fa-x-twitter text-lg"></i><span class="x-label">Xでフィードバック</span></a>
 
 <script>
-const DOWNLOAD_URL="";
+const DOWNLOAD_URL="https://github.com/EzpaNoLy0o/LunatechJapanModify.github.io/releases/download/v0.6.2.3-beta/LJM_CFD_Beta_0.6.2.3_Setup.exe";
 const beta=document.getElementById("agree-beta");
 const redist=document.getElementById("agree-redistribution");
 const btn=document.getElementById("installer-button");
 function updateDownloadButton(){
-  if(!DOWNLOAD_URL){
-    btn.disabled=true;
-    btn.classList.add("disabled-download");
-    return;
-  }
   const ready=beta.checked&&redist.checked;
   btn.disabled=!ready;
   btn.classList.toggle("disabled-download",!ready);
-  btn.textContent=ready?"Setup.exe をダウンロード":"注意事項を確認してください";
+  btn.innerHTML=ready
+    ? '<i class="fa-solid fa-download mr-2"></i>LJM.CFD Beta 0.6.2.3 をダウンロード（209.5 MiB）'
+    : '<i class="fa-solid fa-lock mr-2"></i>2つの注意事項を確認してください';
 }
 beta.addEventListener("change",updateDownloadButton);
 redist.addEventListener("change",updateDownloadButton);
