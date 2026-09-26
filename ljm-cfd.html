@@ -22,6 +22,42 @@
               linear-gradient(90deg, rgba(239,68,68,.07) 1px, transparent 1px);
             background-size: 34px 34px;
         }
+    
+        .x-feedback-float {
+            position: fixed;
+            right: 18px;
+            bottom: 22px;
+            z-index: 9999;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 17px;
+            border-radius: 9999px;
+            background: #000;
+            color: #fff;
+            border: 1px solid #4B5563;
+            box-shadow: 0 10px 30px rgba(0,0,0,.45);
+            font-weight: 800;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+        .x-feedback-float:hover {
+            transform: translateY(-2px);
+            border-color: #EF4444;
+            box-shadow: 0 14px 34px rgba(0,0,0,.55);
+        }
+        .x-feedback-float .x-label { white-space: nowrap; }
+        @media (max-width: 640px) {
+            .x-feedback-float {
+                right: 14px;
+                bottom: 14px;
+                width: 54px;
+                height: 54px;
+                padding: 0;
+                justify-content: center;
+                border-radius: 50%;
+            }
+            .x-feedback-float .x-label { display: none; }
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -341,5 +377,16 @@ langSwitcher.addEventListener('click', () => {
 });
 switchLanguage(currentLang);
 </script>
+
+<a id="x-feedback-float"
+   class="x-feedback-float"
+   href="https://twitter.com/intent/tweet?text=%23LJM.CFD%0A%0ALJM.CFD%20Beta%E3%81%B8%E3%81%AE%E3%83%95%E3%82%A3%E3%83%BC%E3%83%89%E3%83%90%E3%83%83%E3%82%AF%EF%BC%9A%0A"
+   target="_blank"
+   rel="noopener noreferrer"
+   aria-label="Xに #LJM.CFD を付けてフィードバックを投稿">
+    <i class="fa-brands fa-x-twitter text-lg"></i>
+    <span class="x-label">Xでフィードバック</span>
+</a>
+
 </body>
 </html>
