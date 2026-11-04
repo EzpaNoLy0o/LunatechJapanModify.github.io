@@ -1,0 +1,137 @@
+{
+  "_comment": "Lunatech Titanium Caliper Replica - master parameters. All lengths in mm, angles in degrees. Coordinate system: X = caliper length (rotor tangent), Y = rotor axis (+Y = outboard / wheel-face side), Z = rotor radial (caliper on top). Rotor centre = origin, rotor mid-plane Y = 0.",
+  "limits": {
+    "max_axis_mm": 320.0,
+    "target_length_mm": 310.0,
+    "length_tolerance_mm": 6.0,
+    "printer_build_mm": [
+      325.0,
+      325.0,
+      325.0
+    ]
+  },
+  "rotor": {
+    "outer_diameter": 355.0,
+    "thickness": 32.0,
+    "friction_ring_thickness": 11.0,
+    "vane_count": 48,
+    "inner_ring_diameter": 230.0,
+    "hat_outer_diameter": 200.0,
+    "hat_height": 48.0,
+    "hat_bore_diameter": 72.0,
+    "bolt_pcd": 130.0,
+    "bolt_count": 5
+  },
+  "clearance": {
+    "rotor_radial": 3.0,
+    "rotor_axial": 2.5,
+    "pad_to_rotor": 0.5,
+    "wheel_barrel_target_min": 3.0,
+    "wheel_barrel_target_max": 5.0,
+    "spoke_axial_target_min": 3.0,
+    "wheel_barrel_design": 4.0
+  },
+  "wheel": {
+    "nominal_size_in": 18,
+    "barrel_min_inner_diameter": 410.0,
+    "_barrel_note": "410 mm is an ASSUMED display value, not a measured value for any specific 18-inch wheel.",
+    "rim_width_in": 9.0,
+    "offset_et": 40.0,
+    "spoke_back_y": 96.0,
+    "_spoke_note": "spoke_back_y = axial distance from rotor mid-plane (Y=0) to the inner (back) face of the spokes. Assumed value.",
+    "spoke_count": 5,
+    "_mount_note": "Wheel mounting face = rotor hat outer face (rotor.hat_height). Rim centre line = mounting face - offset_et."
+  },
+  "pad": {
+    "backing_thickness": 6.0,
+    "lining_thickness": 10.5,
+    "radial_inner": 126.0,
+    "radial_outer": 176.5,
+    "end_margin": 3.0,
+    "ear_width": 12.0,
+    "ear_top_radius": 188.0
+  },
+  "piston": {
+    "diameters": [
+      28.0,
+      30.0,
+      32.0,
+      34.0
+    ],
+    "_order_note": "listed from leading (-X) to trailing (+X). Values are model placeholders, not Bugatti data.",
+    "web_between_bores": 9.0,
+    "proud_of_housing": 1.5,
+    "bore_depth": 32.0,
+    "bore_clearance": 0.3,
+    "piston_length": 26.0,
+    "housing_wall_radial": 5.5,
+    "housing_back_wall": 4.0,
+    "housing_back_round": 9.0,
+    "angle_offset_deg": 0.0
+  },
+  "body": {
+    "top_outer_radius": 199.0,
+    "top_rail_y": 45.0,
+    "top_rail_half_y": 10.0,
+    "top_rail_radial_center": 190.0,
+    "top_rail_half_r": 9.0,
+    "top_rail_angle_deg": 36.0,
+    "main_bridge_angle_deg": 41.0,
+    "main_bridge_radial_center": 182.0,
+    "main_bridge_half_width_center": 16.5,
+    "main_bridge_half_width_end": 7.0,
+    "main_bridge_y_center": 74.0,
+    "main_bridge_y_end": 60.0,
+    "main_bridge_half_thickness_center": 5.6,
+    "main_bridge_half_thickness_end": 4.0,
+    "main_bridge_crown": 2.0,
+    "inboard_bridge_y": -72.0,
+    "inboard_bridge_radial_center": 186.0,
+    "lower_rail_radial_center": 115.5,
+    "lower_rail_half_r": 4.6,
+    "lower_rail_y": 50.0,
+    "lower_rail_half_y": 7.0,
+    "lower_rail_angle_deg": 38.0,
+    "end_lug_angle_deg": 48.5,
+    "end_lug_radius": 154.0,
+    "end_bridge_angle_extra_deg": 4.0,
+    "rib_scale": 1.0,
+    "blend_major": 8.0,
+    "blend_minor": 4.5,
+    "opening_scale": 1.0,
+    "mount_angle_deg": 44.0,
+    "mount_y": -54.0,
+    "mount_boss_radius": 12.5,
+    "mount_bolt_hole": 14.5,
+    "mount_radial_center": 126.0,
+    "mount_half_length": 14.0
+  },
+  "logo": {
+    "text": "Lunatech",
+    "font_file": "fonts/InterDisplay-SemiBold.otf",
+    "cap_height": 12.5,
+    "tracking": 1.1,
+    "protrusion": 0.8,
+    "embed_depth": 0.5,
+    "insert_root_depth": 0.6,
+    "insert_clearance": 0.12,
+    "center_angle_deg": 0.0,
+    "radial_offset": -0.3
+  },
+  "fdm": {
+    "nozzle": 0.4,
+    "layer_height": 0.14,
+    "min_wall_main": 2.0,
+    "min_wall_rib": 1.6,
+    "min_detail": 0.8,
+    "pin_diameter": 4.0,
+    "pin_length": 12.0,
+    "pin_hole_clearance": 0.15,
+    "pin_count": 4
+  },
+  "mesh": {
+    "voxel_final": 0.4,
+    "voxel_preview": 1.0,
+    "target_triangles": 700000
+  }
+}
