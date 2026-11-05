@@ -1,0 +1,12 @@
+cadquery==2.8.0
+manifold3d==3.5.4
+numpy
+numba
+scipy
+scikit-image
+trimesh
+fast-simplification
+fonttools
+matplotlib
+pillow
+pymeshlab

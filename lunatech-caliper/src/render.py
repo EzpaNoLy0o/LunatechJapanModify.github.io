@@ -163,7 +163,7 @@ def render(objects, eye, target, up=(0, 0, 1), size=(1600, 1100), ortho=None, fo
         gx = sobel(dz, 0)
         gy = sobel(dz, 1)
         g = np.hypot(gx, gy)
-        edge = g > (2.5 * (ortho / min(W, H) if ortho else 0.8)) * 6
+        edge = g > 30.0  # only real depth discontinuities (mm-scaled sobel)
         col[edge & hit] *= 0.45
     img = np.empty((H, W, 3))
     img[:] = bg

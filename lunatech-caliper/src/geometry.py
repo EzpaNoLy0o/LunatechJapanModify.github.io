@@ -332,6 +332,9 @@ def build_scene(p, quality="final"):
     info["pin_th"] = [-15.5, 15.5]
     for tpn in info["pin_th"]:
         sc.cylinder(P(tpn, 184.5, -66.5), (0, 1, 0), 3.5, 6.0, rnd=1.6, k=Km, name="pin_boss_in")
+        # bosses where the pad pin passes through the top rails (>= 2.4 mm wall)
+        for sg in sides:
+            sc.cylinder(P(tpn, 184.5, sg * (ytr + 1.0)), (0, 1, 0), 9.5, 5.4, rnd=2.5, k=Km, name="pin_boss_rail")
 
     # ------------------------------------------------------------------
     # 8. Cuts: rotor slot, pad pocket, bores, membrane openings, holes
@@ -385,10 +388,11 @@ def build_scene(p, quality="final"):
     for e in (-1, 1):
         th_m = e * b["mount_angle_deg"]
         u = np.array([math.sin(math.radians(th_m)), 0.0, math.cos(math.radians(th_m))])
-        sc.cylinder(P(th_m, b["mount_radial_center"], b["mount_y"]), u, 40.0, b["mount_bolt_hole"] / 2,
-                    k=0.8, op=1, name="mount_hole")
-        sc.cylinder(P(th_m, b["mount_radial_center"] + b["mount_half_length"] + 6.0, b["mount_y"]), u, 6.5,
-                    b["mount_bolt_hole"] / 2 + 5.0, k=1.0, op=1, name="spotface")
+        sc.cylinder(P(th_m, b["mount_radial_center"], b["mount_y"]), u, b["mount_half_length"] + 3.0,
+                    b["mount_bolt_hole"] / 2, k=0.8, op=1, name="mount_hole")
+        # head clearance above the boss: just bolt head + washer + 1 mm
+        sc.cylinder(P(th_m, b["mount_radial_center"] + b["mount_half_length"] + 5.0, b["mount_y"]), u, 5.5,
+                    b["mount_bolt_hole"] / 2 + 6.0, k=2.0, op=1, name="spotface")
         the = th1 if e > 0 else th0
         sc.cylinder(P(the + e * 8.0, 182.0, -66.0), (0, 1, 0), 8.0, 2.6, k=0.5, op=1, name="bleeder_hole")
 

@@ -454,11 +454,13 @@ class SDFScene:
                 out_r.append(radii[i] * (1 - ts) + radii[i + 1] * ts)
         out_p.append(pts[-1])
         out_r.append(radii[-1])
-        for i in range(len(out_p) - 1):
-            kk = k if i == 0 else min(k, 0.6)
+        # consecutive round cones share their end spheres -> a hard min gives a
+        # tangent-continuous tube (a smooth-min here would add ridges at every
+        # joint).  Only the first and last segment blend into the structure.
+        nseg = len(out_p) - 1
+        for i in range(nseg):
+            kk = k if i in (0, nseg - 1) else 0.0
             self.roundcone(out_p[i], out_p[i + 1], out_r[i], out_r[i + 1], k=kk, op=op, name=name)
-        # final blend of the far end into the structure
-        self.roundcone(out_p[-2], out_p[-1], out_r[-2], out_r[-1], k=k, op=op, name=name)
 
     def cylinder(self, c, u, half_h, R, rnd=0.0, k=3.0, op=0, name=""):
         c = np.asarray(c, float)

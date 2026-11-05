@@ -117,7 +117,7 @@ def mount_bolts(p):
     for e in (-1, 1):
         th = e * b["mount_angle_deg"]
         u = (math.sin(math.radians(th)), 0.0, math.cos(math.radians(th)))
-        r_seat = b["mount_radial_center"] + b["mount_half_length"] + 6.0 - 6.5
+        r_seat = b["mount_radial_center"] + b["mount_half_length"] - 0.5
         af = 22.0
         bolt = (cq.Workplane("XY").polygon(6, af / math.cos(math.pi / 6)).extrude(9.0)
                 .edges(">Z").chamfer(1.0)

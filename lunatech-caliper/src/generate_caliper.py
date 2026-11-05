@@ -154,8 +154,11 @@ def main():
     insert, _, _ = LG.logo_solid(p, info, -(lg["insert_root_depth"] - 0.05), lg["protrusion"])
     pocket, _, _ = LG.logo_solid(p, info, -lg["insert_root_depth"], lg["protrusion"] + 1.5,
                                  offset=lg["insert_clearance"])
-    body_logo = body + letters_full
-    body_pocket = body - pocket
+    # booleans + 1 micron sliver clean-up (removes near-degenerate rim slivers
+    # that could flip after float32 STL rounding; shape change < 0.001 mm)
+    body_logo = (body + letters_full).simplify(0.001)
+    body_pocket = (body - pocket).simplify(0.001)
+    insert = insert.simplify(0.001)
     log(f"logo '{lg['text']}' width {width:.1f} mm, cap {lg['cap_height']} mm, booleans in {time.time() - t:.1f}s")
 
     Vb, Fb = save_mesh("body_logo", body_logo)
