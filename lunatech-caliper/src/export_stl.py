@@ -52,11 +52,42 @@ def mesh_of(m):
     return np.asarray(mm.vert_properties)[:, :3].astype(float), np.asarray(mm.tri_verts).astype(np.int64)
 
 
+def repair_float32(V, F):
+    """Check self-intersections at the float32 precision the STL will store.
+    If near-coplanar facets touch (numerical, < 1e-5 mm), delete them and
+    re-close the tiny hole; returns (V, F, n_repaired)."""
+    import pymeshlab as ml
+    V32 = np.asarray(V, np.float32).astype(np.float64)
+    ms = ml.MeshSet()
+    ms.add_mesh(ml.Mesh(V32, np.asarray(F, np.int32)))
+    ms.compute_selection_by_self_intersections_per_face()
+    n = ms.current_mesh().selected_face_number()
+    if n == 0:
+        return V, F, 0
+    sel = ms.current_mesh().face_selection_array()
+    tm = trimesh.Trimesh(np.asarray(V, float), np.asarray(F)[~sel], process=False)
+    tm.remove_unreferenced_vertices()
+    trimesh.repair.fill_holes(tm)
+    ms2 = ml.MeshSet()
+    ms2.add_mesh(ml.Mesh(np.asarray(tm.vertices, np.float32).astype(np.float64), np.asarray(tm.faces, np.int32)))
+    ms2.compute_selection_by_self_intersections_per_face()
+    left = ms2.current_mesh().selected_face_number()
+    V2, F2 = np.asarray(tm.vertices), np.asarray(tm.faces, np.int64)
+    if left or not tm.is_watertight:
+        log(f"  float32 repair incomplete (left {left}, watertight {tm.is_watertight}) - keeping original")
+        return V, F, -n
+    return V2, F2, n
+
+
 def write_stl(name, m_or_vf):
     if isinstance(m_or_vf, Manifold):
         V, F = mesh_of(m_or_vf)
     else:
         V, F = m_or_vf
+    if len(F) > 50000:
+        V, F, nrep = repair_float32(V, F)
+        if nrep:
+            log(f"  {name}: repaired {nrep} float32-touching facets")
     tm = trimesh.Trimesh(V, F, process=False)
     path = os.path.join(STL, name)
     tm.export(path)
@@ -248,8 +279,14 @@ def main():
         log(f"  {k:20s} support {r['support_volume_cm3']:6.1f} cm3  scar {r['support_scar_area_cm2']:6.1f} cm2  "
             f"bed {r['bed_contact_cm2']:5.1f} cm2  logo n_z {r['logo_normal_z']:+.2f}  h {r['height_mm']:5.1f}  ~{r['est_time_h']:4.1f} h  score {r['score']}"
             + ("  <== chosen" if k == best else ""))
-    fdm_body = on_bed(rot(ORIENTATIONS[best], body_pocket))
-    write_stl("Lunatech_Caliper_FDM_Optimized.stl", fdm_body)
+    # orient with a plain array transform (bit-stable topology; manifold's own
+    # transform re-meshes and could create two touching facets)
+    _d = np.load(os.path.join(BUILD, "body_pocket.npz"))   # raw arrays, no re-meshing
+    Vb, Fb = _d["V"], _d["F"]
+    Vo = Vb @ np.asarray(ORIENTATIONS[best]).T
+    lo, hi = Vo.min(0), Vo.max(0)
+    base = Vo + [BED / 2 - (lo[0] + hi[0]) / 2, BED / 2 - (lo[1] + hi[1]) / 2, -lo[2]]
+    write_stl("Lunatech_Caliper_FDM_Optimized.stl", (base, Fb))
 
     # 3. logo inserts
     import logo as LG

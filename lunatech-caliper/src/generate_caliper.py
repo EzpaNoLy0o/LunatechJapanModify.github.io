@@ -154,11 +154,8 @@ def main():
     insert, _, _ = LG.logo_solid(p, info, -(lg["insert_root_depth"] - 0.05), lg["protrusion"])
     pocket, _, _ = LG.logo_solid(p, info, -lg["insert_root_depth"], lg["protrusion"] + 1.5,
                                  offset=lg["insert_clearance"])
-    # booleans + 1 micron sliver clean-up (removes near-degenerate rim slivers
-    # that could flip after float32 STL rounding; shape change < 0.001 mm)
-    body_logo = (body + letters_full).simplify(0.001)
-    body_pocket = (body - pocket).simplify(0.001)
-    insert = insert.simplify(0.001)
+    body_logo = body + letters_full
+    body_pocket = body - pocket
     log(f"logo '{lg['text']}' width {width:.1f} mm, cap {lg['cap_height']} mm, booleans in {time.time() - t:.1f}s")
 
     Vb, Fb = save_mesh("body_logo", body_logo)
@@ -180,7 +177,15 @@ def main():
     import parts as PT
     from step_faceted import merge_step
     t = time.time()
+    # STEP body: quadric decimation -> manifold round trip (splits the few
+    # non-manifold edges a collapse can create) -> keep the main solid
     Vs, Fs = decimate(Vb, Fb, 60000)
+    ms, _, crumbs = keep_main_components(to_manifold(Vs, Fs))
+    Vs, Fs = from_manifold(ms)
+    import trimesh
+    tchk = trimesh.Trimesh(Vs, Fs, process=False)
+    assert tchk.is_watertight and tchk.is_winding_consistent and tchk.volume > 0, "STEP body mesh not closed"
+    log(f"STEP body: {len(Fs):,} faceted faces, closed, volume {tchk.volume / 1000:.1f} cm3 (crumbs removed {crumbs})")
     named = []
     named += PT.pistons(p)
     named += PT.pads(p, info["pin_th"])

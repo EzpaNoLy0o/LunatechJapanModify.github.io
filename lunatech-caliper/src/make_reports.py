@@ -224,9 +224,17 @@ Z = ローター半径方向。原点 = ローター回転中心、ローター�
         f"{yes(s['normals_outward'] and s['winding_consistent'])} | {s['shells']} | {s['internal_voids']} | {s['volume_cm3']} |"
         for s in val["stl"])
     trs = "\n".join(f"| `{s['file']}` | {wt(s)} |" for s in val["stl"] if s.get("wall_thickness_mm"))
-    strows = "\n".join(
-        f"| `{s['file']}` | {s['size_MB']} | {s['solids']} | {yes(s['all_valid'])} | {s['volume_cm3']} | "
-        f"{s['bbox_mm'][0]}×{s['bbox_mm'][1]}×{s['bbox_mm'][2]} | {s['seconds']} |" for s in val["step"]) or "| （未実行） | | | | | | |"
+    srow = []
+    for s_ in val["step"]:
+        if "file_note" in s_:
+            continue
+        fb = s_.get("faceted_body")
+        body_txt = (f"FACETED_BREP {fb['faceted_faces']:,} 面、閉 {yes(fb['closed'])}、向き {yes(fb['winding_consistent'] and fb['outward'])}、"
+                    f"{fb['volume_cm3']} cm³、{fb['bbox_mm'][0]}×{fb['bbox_mm'][1]}×{fb['bbox_mm'][2]}") if fb else "—"
+        occ = (f"{s_['occt_solids']} ソリッド、全有効 {yes(s_['occt_all_valid'])}、{s_['occt_volume_cm3']} cm³、"
+               f"{s_['occt_bbox_mm'][0]}×{s_['occt_bbox_mm'][1]}×{s_['occt_bbox_mm'][2]}、{s_['seconds']} 秒")
+        srow.append(f"| `{s_['file']}` | {s_['size_MB']} | {body_txt} | {occ} |")
+    strows = "\n".join(srow)
     gv = f"""# Geometry Validation
 
 `src/validate_model.py` が **書き出したファイルをディスクから読み戻して** 機械的に検査した結果です
@@ -240,7 +248,9 @@ Z = ローター半径方向。原点 = ローター回転中心、ローター�
 
 * シェル数 > 1 のファイル（ピストン8個、ロゴ8文字、ピン4本など）は **意図的に複数部品を並べたプレート** です。
   キャリパー本体系 STL はすべて 1 シェル（浮遊ボディなし）。
-* 自己交差：pymeshlab `compute_selection_by_self_intersections_per_face`。非多様体辺：辺共有数 ≠ 2 の辺。
+* 自己交差：pymeshlab `compute_selection_by_self_intersections_per_face`（MeshLab 内部は float32 演算）。非多様体辺：辺共有数 ≠ 2 の辺。
+* `FDM_Optimized` はベッド座標へ移動した際、ロゴポケット壁の「ほぼ同一平面」の 2 面が float32 精度で接触したため、
+  `export_stl.py` がその 2 面を削除して穴を再三角形化し、閉鎖と自己交差 0 を再確認しています（形状差 < 0.001 mm）。
 * 内部空洞：符号付き体積が負の閉シェル。法線：全体の符号付き体積 > 0 かつ巻き方向一貫。
 * 等値面抽出直後の微小浮遊片（数値ノイズ）は生成時に除去：{meta['dropped_crumbs']}
 
@@ -269,9 +279,15 @@ Z = ローター半径方向。原点 = ローター回転中心、ローター�
 
 ## 4. STEP 読み戻し（OpenCASCADE `STEPControl_Reader`）
 
-| ファイル | MB | ソリッド数 | 全ソリッド有効 | 体積 cm³ | BBox mm | 読込 s |
-|---|---|---|---|---|---|---|
+| ファイル | MB | ファセット本体（STEP エンティティから再構築） | ファイル全体の OpenCASCADE 読込 |
+|---|---|---|---|
 {strows}
+
+ソリッド数：Master 17 = 本体 1 + ピストン 8 + パッド 2 + パッドピン 2 + マウントボルト 2 + ブリーダー 2、
+Assembly はローター 1 を追加、18inch はさらにホイール 1 を追加。
+
+（注：開発途中、間引き後の本体に非多様体辺が 7 本残っていた版では、OCCT が形状修復を行うため読込に 25 分以上
+かかりました。manifold 化して閉ソリッドを保証してからは 30 秒程度で読めます。）
 
 ### STEP の制限事項（重要）
 

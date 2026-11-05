@@ -156,21 +156,69 @@ def assembly_checks(p):
                    required_spoke_back_y_for_3mm=round(ymax + 3.0, 1)))
 
 
-def step_checks():
+def parse_faceted(path):
+    """Fast structural check of the FACETED_BREP bodies in a STEP file:
+    rebuild the triangle mesh from CARTESIAN_POINT / POLY_LOOP entities."""
+    import re
+    pts, loops = {}, []
+    rp = re.compile(r"#(\d+)=CARTESIAN_POINT\('',\(([^)]*)\)\)")
+    rl = re.compile(r"POLY_LOOP\('',\(#(\d+),#(\d+),#(\d+)\)\)")
+    with open(path) as f:
+        for line in f:
+            if "POLY_LOOP" in line:
+                m = rl.search(line)
+                loops.append((int(m.group(1)), int(m.group(2)), int(m.group(3))))
+            elif "CARTESIAN_POINT" in line:
+                m = rp.search(line)
+                if m:
+                    pts[int(m.group(1))] = [float(x) for x in m.group(2).split(",")]
+    if not loops:
+        return None
+    ids = sorted({i for l in loops for i in l})
+    pos = {k: n for n, k in enumerate(ids)}
+    V = np.array([pts[i] for i in ids])
+    F = np.array([[pos[a], pos[b], pos[c]] for a, b, c in loops])
+    tm = trimesh.Trimesh(V, F, process=False)
+    return dict(faceted_faces=len(F), closed=bool(tm.is_watertight), winding_consistent=bool(tm.is_winding_consistent),
+                volume_cm3=round(tm.volume / 1000, 1), outward=bool(tm.volume > 0),
+                bbox_mm=[round(float(e), 1) for e in (V.max(0) - V.min(0))])
+
+
+def step_checks(occt_faceted=False):
+    """Every STEP: structural check of faceted bodies (fast) + OpenCASCADE
+    read of the whole file (all solids)."""
     from step_faceted import read_step
     out = []
     for f in sorted(glob.glob(os.path.join(CAD, "*.step"))):
         t = time.time()
-        s = read_step(f)
-        sol = s.Solids()
-        bb = s.BoundingBox()
-        out.append(dict(file=os.path.basename(f), size_MB=round(os.path.getsize(f) / 1e6, 1), solids=len(sol),
-                        all_valid=bool(all(x.isValid() for x in sol)),
-                        volume_cm3=round(sum(x.Volume() for x in sol) / 1000, 1),
-                        bbox_mm=[round(bb.xlen, 1), round(bb.ylen, 1), round(bb.zlen, 1)],
-                        seconds=round(time.time() - t, 1)))
-        log("STEP", out[-1])
+        r = dict(file=os.path.basename(f), size_MB=round(os.path.getsize(f) / 1e6, 1))
+        fb = parse_faceted(f)
+        r["faceted_body"] = fb
+        if fb is None or occt_faceted:
+            s = read_step(f)
+            sol = s.Solids()
+            bb = s.BoundingBox()
+            r.update(occt_solids=len(sol), occt_all_valid=bool(all(x.isValid() for x in sol)),
+                     occt_volume_cm3=round(sum(x.Volume() for x in sol) / 1000, 1),
+                     occt_bbox_mm=[round(bb.xlen, 1), round(bb.ylen, 1), round(bb.zlen, 1)])
+        r["seconds"] = round(time.time() - t, 1)
+        out.append(r)
+        log("STEP", r)
     return out
+
+
+def occt_full_read(name):
+    from step_faceted import read_step
+    t = time.time()
+    s = read_step(os.path.join(CAD, name))
+    sol = s.Solids()
+    bb = s.BoundingBox()
+    r = dict(file=name, occt_solids=len(sol), occt_all_valid=bool(all(x.isValid() for x in sol)),
+             occt_volume_cm3=round(sum(x.Volume() for x in sol) / 1000, 1),
+             occt_bbox_mm=[round(bb.xlen, 1), round(bb.ylen, 1), round(bb.zlen, 1)],
+             seconds=round(time.time() - t, 1))
+    json.dump(r, open(os.path.join(BUILD, "step_occt_full.json"), "w"), indent=1)
+    log("OCCT full read", r)
 
 
 def main():
@@ -200,10 +248,13 @@ def main():
     if res["assembly"]["rotor"]["body_points_inside_rotor"]:
         res["failures"].append("caliper body intersects rotor")
     if "--no-step" not in sys.argv:
-        res["step"] = step_checks()
+        res["step"] = step_checks(occt_faceted=True)
         for s in res["step"]:
-            if not s["all_valid"] or s["solids"] == 0:
-                res["failures"].append(f"{s['file']}: invalid STEP solid")
+            fb = s.get("faceted_body")
+            if fb and not (fb["closed"] and fb["winding_consistent"] and fb["outward"]):
+                res["failures"].append(f"{s['file']}: faceted body not closed/consistent")
+            if "occt_all_valid" in s and (not s["occt_all_valid"] or s["occt_solids"] == 0):
+                res["failures"].append(f"{s['file']}: invalid STEP solid (OCCT)")
     with open(os.path.join(BUILD, "validation.json"), "w") as f:
         json.dump(res, f, indent=1)
     log("FAILURES:" if res["failures"] else "ALL HARD CHECKS PASSED", res["failures"])
@@ -211,4 +262,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--occt-step-full" in sys.argv:
+        occt_full_read(sys.argv[sys.argv.index("--occt-step-full") + 1])
+    else:
+        main()

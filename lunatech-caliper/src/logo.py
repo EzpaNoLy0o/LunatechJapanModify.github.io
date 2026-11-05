@@ -55,7 +55,9 @@ def logo_cross_section(p, offset=0.0):
     polys, width = glyph_polygons(p)
     cs = CrossSection(polys, FillRule.EvenOdd)
     if abs(offset) > 1e-9:
-        cs = cs.offset(offset, JoinType.Round)
+        # round join, then drop the micro-arc vertices (< 0.02 mm) that would
+        # otherwise leave sliver triangles at the pocket rim after the boolean
+        cs = cs.offset(offset, JoinType.Round).simplify(0.02)
     return cs, width
 
 
