@@ -42,5 +42,5 @@ if /i "%~2"=="--with-open3d" python -m pip install -r requirements-optional.txt
 if /i "%~2"=="--dev" python -m pip install -r requirements-dev.txt
 echo.
 echo 完了しました。run_ljm_re.bat で起動できます。
-echo （テスト: setup_windows.bat --dev のあと run_tests.bat / EXE作成: build_exe.bat）
+echo Test: run_tests.bat / Build EXE: build_exe.bat
 pause

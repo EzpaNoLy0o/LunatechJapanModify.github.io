@@ -119,7 +119,8 @@ PyInstaller による onedir ビルド（Linux）を作成し、`LJM_ReverseEngi
 
 ## 未検証・残っている問題点
 
-1. **Windows 実機での動作は未検証**（開発環境は Linux）。依存ライブラリはすべて Windows 用 wheel があり、
+0. **Windows 11 実機で自動テスト 66 件の全件合格を確認済み**（2026-11、Python 3.12、`C:\LJM_RE` に配置）。パスが長い場所（260文字制限）では DLL の読込に失敗するため、短いパスに配置すること。GUI の手動操作と EXE 作成は未確認。
+1. （以下は当初の記載）**Windows 実機での動作は未検証**（開発環境は Linux）。依存ライブラリはすべて Windows 用 wheel があり、
    Windows 固有の処理（日本語パスの OCC I/O 回避、%APPDATA% 設定、bat スクリプト）は実装済み。
    初回は `run_tests.bat` と `LJM_ReverseEngineering.exe --self-test` での確認を推奨します。
 2. **実際の POP 4 スキャンデータでは未検証**（合成データのみ）。実データでは自動閾値・スマート選択の角度許容の調整が必要な可能性があります。
