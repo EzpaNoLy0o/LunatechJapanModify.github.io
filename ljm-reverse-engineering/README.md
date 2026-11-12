@@ -40,6 +40,7 @@ Revopoint POP 4（Revo Scan 6）でスキャンした自動車部品のメッシ
 
 ## セットアップ（Windows）
 
+0. このフォルダを **`C:\LJM_RE` のような短いパス**に置く（パスが長いと Windows の260文字制限で DLL を読み込めず、起動・テストに失敗します）
 1. [python.org](https://www.python.org/downloads/windows/) から **Python 3.12 (64-bit)** をインストール（「py ランチャー」を含める）
 2. このフォルダで `setup_windows.bat` をダブルクリック（仮想環境 `.venv` を作成し、ライブラリをインストール）
    - Open3D（任意機能）も入れる場合: `setup_windows.bat --with-open3d`

@@ -5,6 +5,15 @@ cd /d "%~dp0"
 echo ============================================================
 echo  LJM Reverse Engineering - 環境構築 (Windows 11 / Python 3.12 64bit)
 echo ============================================================
+set "LJM_DIR=%~dp0"
+if not "%LJM_DIR:~80,1%"=="" (
+  echo [エラー] このフォルダのパスが長すぎます ^(80文字超^):
+  echo   %LJM_DIR%
+  echo Windows のパス長制限 ^(260文字^) により、ライブラリの DLL を読み込めなくなります。
+  echo フォルダを C:\LJM_RE のような短い場所へ移動してから、もう一度実行してください。
+  pause
+  exit /b 1
+)
 where py >nul 2>nul
 if errorlevel 1 (
   echo [エラー] Python ランチャー ^(py^) が見つかりません。
