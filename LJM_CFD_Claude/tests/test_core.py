@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from ljmcfd.core import paths, units
-from ljmcfd.core.jobs import PROTOCOL_PREFIX, parse_protocol_line
+from ljmcfd.core.jobs import PROTOCOL_PREFIX, parse_protocol_line, worker_python
 from ljmcfd.core.pose import Pose, bounds_of_points, merge_bounds, pose_matrix, rotation_matrix, transform_points
 from ljmcfd.core.project import PartRecord, Project, ProjectError, load_project, save_project
 
@@ -135,3 +135,14 @@ def test_project_rejects_foreign_and_newer_files(tmp_path):
         load_project(tmp_path)
     with pytest.raises(ProjectError):
         load_project(tmp_path / "nope")
+
+
+def test_worker_python_avoids_pythonw(tmp_path):
+    scripts = tmp_path / "Scripts"
+    scripts.mkdir()
+    (scripts / "pythonw.exe").write_text("")
+    # python.exe が無ければそのまま、あればコンソール版へ切り替える
+    assert worker_python(str(scripts / "pythonw.exe")) == str(scripts / "pythonw.exe")
+    (scripts / "python.exe").write_text("")
+    assert worker_python(str(scripts / "pythonw.exe")) == str(scripts / "python.exe")
+    assert worker_python(str(scripts / "python.exe")) == str(scripts / "python.exe")

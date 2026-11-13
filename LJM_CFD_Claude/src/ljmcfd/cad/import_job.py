@@ -5,6 +5,7 @@
 * ``meta.json``            パーツ一覧・単位・統計
 * ``part_NNN.vtp``         表示用サーフェス (面番号つき、座標は ``geometry_unit``)
 * ``part_NNN_edges.vtp``   面輪郭線
+* ``part_NNN_hull.npy``    凸包頂点 (姿勢を変えたときの境界ボックス計算用)
 * ``part_NNN.brep``        B-Rep (STEP / IGES のみ。Stage 2 のメッシュ生成で使用)
 
 キーは「元ファイルの絶対パス・サイズ・更新時刻・品質・インポータ版」から決まるため、
@@ -19,12 +20,14 @@ import shutil
 import time
 from pathlib import Path
 
+import numpy as np
+
 from ..core import paths
 from ..core.jobs import JobContext, JobError
 from ..core.units import guess_unit_from_size
 
 #: キャッシュ形式を変えたら上げる (古いキャッシュは無視される)
-IMPORTER_VERSION = 1
+IMPORTER_VERSION = 2
 
 STEP_SUFFIXES = (".step", ".stp")
 IGES_SUFFIXES = (".iges", ".igs")
@@ -63,7 +66,7 @@ def load_cached_meta(cache_dir: str | Path) -> dict | None:
     if meta.get("importer_version") != IMPORTER_VERSION:
         return None
     for part in meta.get("parts", []):
-        for key in ("surface", "edges", "brep"):
+        for key in ("surface", "edges", "hull", "brep"):
             name = part.get(key)
             if name and not (cache_dir / name).is_file():
                 return None
@@ -77,7 +80,7 @@ def _bounds_list(bounds) -> list[float]:
 def _import_occ(path: Path, name: str, fmt: str, quality: str, max_parts: int, out_dir: Path, ctx: JobContext) -> tuple[list[dict], str | None]:
     # OCP の import は重いので、必要になってから読み込む
     from . import occ_io, unit_detect
-    from .surface import build_surface, face_boundary_edges
+    from .surface import build_surface, convex_hull_points, face_boundary_edges
 
     occ_io.silence_occ_messages()
     ctx.progress(0.05, f"{fmt.upper()} ファイルを解析中…")
@@ -99,6 +102,7 @@ def _import_occ(path: Path, name: str, fmt: str, quality: str, max_parts: int, o
         stem = f"part_{index:03d}"
         surface.save(out_dir / f"{stem}.vtp", binary=True)
         face_boundary_edges(surface).save(out_dir / f"{stem}_edges.vtp", binary=True)
+        np.save(out_dir / f"{stem}_hull.npy", convex_hull_points(surface.points))
         occ_io.write_brep(part.shape, out_dir / f"{stem}.brep")
         entries.append({
             "index": index,
@@ -106,6 +110,7 @@ def _import_occ(path: Path, name: str, fmt: str, quality: str, max_parts: int, o
             "color": list(part.color) if part.color else None,
             "surface": f"{stem}.vtp",
             "edges": f"{stem}_edges.vtp",
+            "hull": f"{stem}_hull.npy",
             "brep": f"{stem}.brep",
             "n_points": int(surface.n_points),
             "n_triangles": int(surface.n_cells),
@@ -118,7 +123,7 @@ def _import_occ(path: Path, name: str, fmt: str, quality: str, max_parts: int, o
 
 
 def _import_stl(path: Path, name: str, out_dir: Path, ctx: JobContext) -> list[dict]:
-    from .surface import FACE_ID, face_boundary_edges, read_stl
+    from .surface import FACE_ID, convex_hull_points, face_boundary_edges, read_stl
 
     ctx.progress(0.1, "STL ファイルを読み込み中…")
     groups = read_stl(path, name)
@@ -128,12 +133,14 @@ def _import_stl(path: Path, name: str, out_dir: Path, ctx: JobContext) -> list[d
         stem = f"part_{index:03d}"
         surface.save(out_dir / f"{stem}.vtp", binary=True)
         face_boundary_edges(surface).save(out_dir / f"{stem}_edges.vtp", binary=True)
+        np.save(out_dir / f"{stem}_hull.npy", convex_hull_points(surface.points))
         entries.append({
             "index": index,
             "name": name,
             "color": None,
             "surface": f"{stem}.vtp",
             "edges": f"{stem}_edges.vtp",
+            "hull": f"{stem}_hull.npy",
             "brep": None,
             "n_points": int(surface.n_points),
             "n_triangles": int(surface.n_cells),

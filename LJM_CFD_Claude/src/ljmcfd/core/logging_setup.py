@@ -24,10 +24,13 @@ def setup_logging(level: int = logging.INFO) -> logging.Logger:
         file_handler.setFormatter(formatter)
         root.addHandler(file_handler)
     except OSError as exc:
-        sys.stderr.write(f"ログファイルを開けません: {exc}\n")
-    stream = logging.StreamHandler(sys.stderr)
-    stream.setFormatter(formatter)
-    root.addHandler(stream)
+        if sys.stderr is not None:
+            sys.stderr.write(f"ログファイルを開けません: {exc}\n")
+    # pythonw.exe (コンソールなし) で起動した場合 sys.stderr は None になる
+    if sys.stderr is not None:
+        stream = logging.StreamHandler(sys.stderr)
+        stream.setFormatter(formatter)
+        root.addHandler(stream)
     return root
 
 

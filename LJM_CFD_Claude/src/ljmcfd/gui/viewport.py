@@ -57,7 +57,10 @@ class Viewport(QWidget):
         self.scene = scene
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        self.plotter = QtInteractor(self, auto_update=False, multi_samples=4)
+        # MSAA (multi_samples > 0) は半透明表示用の depth peeling と両立せず、半透明の面が
+        # 一切描画されなくなる。そのため MSAA は使わず、アンチエイリアスは FXAA で行う。
+        self.plotter = QtInteractor(self, auto_update=False, multi_samples=0)
+        self.plotter.enable_anti_aliasing("fxaa")
         layout.addWidget(self.plotter)
 
         self.mode = MODE_PART
@@ -175,6 +178,12 @@ class Viewport(QWidget):
     def _scene_bounds(self) -> tuple[float, ...]:
         return self.scene.assembly.world_bounds(visible_only=True) or DEFAULT_BOUNDS
 
+    def _fit_bounds(self) -> tuple[float, ...]:
+        """フィット対象の範囲。寸法ラベルや風向矢印が収まるよう、モデル境界を少し広げる。"""
+        b = self._scene_bounds()
+        pad = 0.12 * max(b[1] - b[0], b[3] - b[2], b[5] - b[4])
+        return (b[0] - pad, b[1] + pad, b[2] - pad, b[3] + pad, b[4], b[5] + pad)
+
     def set_view(self, name: str) -> None:
         direction, up = VIEW_DIRECTIONS[name]
         b = self._scene_bounds()
@@ -185,11 +194,11 @@ class Viewport(QWidget):
         camera.focal_point = tuple(center)
         camera.position = tuple(center + direction * radius * 3.0)
         camera.up = up
-        self.plotter.reset_camera(bounds=b, render=False)
+        self.plotter.reset_camera(bounds=self._fit_bounds(), render=False)
         self.request_render()
 
     def fit(self) -> None:
-        self.plotter.reset_camera(bounds=self._scene_bounds(), render=False)
+        self.plotter.reset_camera(bounds=self._fit_bounds(), render=False)
         self.request_render()
 
     def camera_state(self) -> dict:
@@ -362,16 +371,16 @@ class Viewport(QWidget):
                 pv.PolyData(pts, lines=cells.ravel()), color=color, line_width=width, lighting=False,
                 pickable=False, reset_camera=False, render=False, name=name,
             )
-        # 風向 (+X) の矢印を上流側の地面に置く
-        length = 0.6 * margin
-        start = np.array([x0 + 0.15 * margin, (b[2] + b[3]) / 2, 0.0])
-        arrow = pv.Arrow(start=start, direction=(1, 0, 0), scale=length, tip_length=0.3, tip_radius=0.09, shaft_radius=0.03)
+        # 風向 (+X) の矢印: モデル上流側の地面に小さく置く
+        length = 0.4 * margin
+        start = np.array([b[0] - 0.25 * margin - length, (b[2] + b[3]) / 2, 0.0])
+        arrow = pv.Arrow(start=start, direction=(1, 0, 0), scale=length, tip_length=0.3, tip_radius=0.08, shaft_radius=0.025)
         self.plotter.add_mesh(
             arrow, color=theme.ACCENT, lighting=False, pickable=False, reset_camera=False, render=False,
             name="wind_arrow",
         )
         self.plotter.add_point_labels(
-            np.array([start + [length / 2, 0.0, 0.12 * length]]), ["WIND +X"], name="wind_label", **self._label_kwargs()
+            np.array([start + [length / 2, 0.0, 0.2 * length]]), ["WIND +X"], name="wind_label", **self._label_kwargs()
         )
 
     def _update_face_highlight(self) -> None:
@@ -392,7 +401,7 @@ class Viewport(QWidget):
             actor.user_matrix = self.scene.assembly.world_matrix(part)
             # 元の面と同じ位置に重ねるため、手前へオフセットして Z ファイティングを防ぐ
             actor.mapper.SetResolveCoincidentTopologyToPolygonOffset()
-            actor.mapper.SetRelativeCoplanarTopologyPolygonOffsetParameters(-2.0, -2.0)
+            actor.mapper.SetRelativeCoincidentTopologyPolygonOffsetParameters(-2.0, -2.0)
         self.request_render()
 
     def show_defects(self, part_id: str, defects: pv.PolyData | None) -> None:
@@ -474,6 +483,10 @@ class Viewport(QWidget):
     def eventFilter(self, obj, event) -> bool:  # noqa: N802 - Qt の命名
         if obj is self.plotter:
             kind = event.type()
+            if kind in (QEvent.KeyPress, QEvent.KeyRelease):
+                # VTK 既定のキー操作 (q/e = 終了, w = ワイヤーフレーム, 3 = ステレオ表示 など) を無効化する。
+                # アプリのショートカットは Qt 側で先に処理されるため、ここで捨てても影響しない。
+                return True
             if kind == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
                 self._press_pos = event.position().toPoint()
             elif kind == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:

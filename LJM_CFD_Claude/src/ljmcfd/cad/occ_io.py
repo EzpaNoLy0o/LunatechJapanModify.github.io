@@ -52,9 +52,9 @@ _to_face = getattr(_topods.TopoDS, "Face_s", None) or _topods.TopoDS.Face
 
 #: テッセレーション品質 → (線形偏差の対角長比, 角度偏差 [rad])
 TESSELLATION_QUALITY: dict[str, tuple[float, float]] = {
-    "coarse": (2.0e-3, 0.50),
-    "standard": (5.0e-4, 0.35),
-    "fine": (1.5e-4, 0.20),
+    "coarse": (2.0e-3, 0.40),
+    "standard": (5.0e-4, 0.20),
+    "fine": (1.5e-4, 0.10),
 }
 
 _SURFACE_TYPE_NAMES = {
@@ -212,7 +212,8 @@ def _read_step_xcaf(path: str, ctx: JobContext) -> list[OccPart]:
             target = TDF_Label()
             shape_tool.GetReferredShape_s(label, target)
             location = location.Multiplied(shape_tool.GetLocation_s(label))
-        name = _label_name(target) or _label_name(label) or inherited_name
+        # インスタンス名 (同じ形状を複数配置したときに個別に付く名前) を優先する
+        name = _label_name(label) or _label_name(target) or inherited_name
         color = _label_color(color_tool, label) or _label_color(color_tool, target) or inherited_color
         if shape_tool.IsAssembly_s(target):
             components = _LabelSequence()

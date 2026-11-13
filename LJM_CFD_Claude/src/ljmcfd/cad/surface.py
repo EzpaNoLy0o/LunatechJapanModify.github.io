@@ -114,3 +114,23 @@ def read_stl(path: str | Path, default_name: str | None = None) -> list[tuple[st
         mesh.clear_data()
         result.append((name, segment_by_feature_angle(mesh)))
     return result
+
+
+def convex_hull_points(points: np.ndarray) -> np.ndarray:
+    """点群の凸包頂点 (N, 3)。境界ボックスを任意の姿勢で正確かつ高速に求めるために使う。
+
+    凸包の頂点だけを変換すれば、全点を変換した場合と同じ境界が得られる。
+    平面形状などで凸包を作れない場合は全点をそのまま返す (結果は同じく正確)。
+    """
+    pts = np.asarray(points, dtype=np.float64)
+    if len(pts) <= 64:
+        return pts
+    from scipy.spatial import ConvexHull, QhullError
+
+    for options in (None, "QJ"):   # QJ: 同一平面上の点群でも凸包を作れるよう微小に揺らす
+        try:
+            hull = ConvexHull(pts) if options is None else ConvexHull(pts, qhull_options=options)
+            return pts[np.unique(hull.vertices)]
+        except (QhullError, ValueError):
+            continue
+    return pts

@@ -9,3 +9,4 @@ dist/
 workspace/
 projects/
 *.log
+demo/

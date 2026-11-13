@@ -83,7 +83,21 @@ def job_command(name: str, args_path: str) -> list[str]:
     """ジョブを子プロセスとして起動するコマンドライン。"""
     if getattr(sys, "frozen", False):  # PyInstaller 等で固めた実行ファイル
         return [sys.executable, "--job", name, str(args_path)]
-    return [sys.executable, "-m", "ljmcfd", "--job", name, str(args_path)]
+    return [worker_python(), "-m", "ljmcfd", "--job", name, str(args_path)]
+
+
+def worker_python(executable: str | None = None) -> str:
+    """ジョブ用の Python 実行ファイル。
+
+    GUI を ``pythonw.exe`` (コンソールなし) で起動していても、ジョブは標準出力で親と
+    通信するため、同じフォルダの ``python.exe`` を使う。
+    """
+    exe = Path(executable or sys.executable)
+    if exe.name.lower() == "pythonw.exe":
+        console = exe.with_name("python.exe")
+        if console.is_file():
+            return str(console)
+    return str(exe)
 
 
 def job_environment(base: dict | None = None) -> dict:

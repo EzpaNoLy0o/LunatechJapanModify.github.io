@@ -250,3 +250,33 @@ def test_split_multi_solid_helper():
     assert all(p.color == (0.1, 0.2, 0.3) for p in parts)
     single = OccPart("one", make_box(1, 1, 1))
     assert _split_multi_solid(single) == [single]
+
+
+def test_instances_of_one_shape_keep_their_own_names(instanced_step, cache_root):
+    meta, _ = _import(instanced_step, cache_root)
+    parts = {p["name"]: p["bounds"] for p in meta["parts"]}
+    assert set(parts) == {"Wheel_FL", "Wheel_RL"}
+    assert parts["Wheel_RL"][0] - parts["Wheel_FL"][0] == pytest.approx(2600.0, abs=1e-3)
+
+
+def test_flat_stl_and_cached_bounds(tmp_path, cache_root):
+    """厚みのない平板 (凸包が退化する形状) でも読み込め、境界が正しく求まる。"""
+    plane = pv.Plane(i_size=2000.0, j_size=1000.0, i_resolution=20, j_resolution=10).triangulate()
+    path = tmp_path / "floor.stl"
+    plane.save(path)
+    meta, _ = _import(path, cache_root)
+    assert meta["geometry_unit"] == "mm"
+    assembly = Assembly()
+    part = assembly.add_from_meta(meta)[0]
+    assert len(part.hull_points) < plane.n_points          # 凸包へ縮約されている
+    b = assembly.world_bounds()
+    assert (b[1] - b[0], b[3] - b[2], b[5] - b[4]) == pytest.approx((2.0, 1.0, 0.0), abs=1e-6)
+    # 姿勢を変えるたびに境界が更新される (古いキャッシュを返さない)
+    part.pose.roll = 90.0
+    b = assembly.world_bounds()
+    assert (b[3] - b[2], b[5] - b[4]) == pytest.approx((0.0, 1.0), abs=1e-6)
+    assembly.pose.yaw = 90.0
+    b = assembly.world_bounds()
+    assert (b[1] - b[0], b[3] - b[2], b[5] - b[4]) == pytest.approx((0.0, 2.0, 1.0), abs=1e-6)
+    part.unit = "m"
+    assert assembly.world_bounds()[5] - assembly.world_bounds()[4] == pytest.approx(1000.0)

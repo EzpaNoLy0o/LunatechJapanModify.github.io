@@ -172,3 +172,39 @@ def cache_root(tmp_path) -> Path:
     root = tmp_path / "cache"
     root.mkdir()
     return root
+
+
+@pytest.fixture(scope="session")
+def instanced_step(data_dir) -> Path:
+    """同じ形状 (ホイール) を別名で 2 か所に配置したアセンブリ STEP。"""
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+    from OCP.STEPCAFControl import STEPCAFControl_Writer
+    from OCP.STEPControl import STEPControl_AsIs
+    from OCP.TCollection import TCollection_ExtendedString
+    from OCP.TDataStd import TDataStd_Name
+    from OCP.TDocStd import TDocStd_Document
+    from OCP.TopLoc import TopLoc_Location
+    from OCP.XCAFDoc import XCAFDoc_DocumentTool
+    from OCP.gp import gp_Trsf, gp_Vec
+
+    from ljmcfd.cad.occ_io import silence_occ_messages
+
+    silence_occ_messages()
+    doc = TDocStd_Document(TCollection_ExtendedString("XmlOcaf"))
+    shape_tool = XCAFDoc_DocumentTool.ShapeTool_s(doc.Main())
+    asm = shape_tool.NewShape()
+    TDataStd_Name.Set_s(asm, TCollection_ExtendedString("Axle"))
+    wheel = shape_tool.AddShape(BRepPrimAPI_MakeCylinder(300.0, 200.0).Shape(), False)
+    TDataStd_Name.Set_s(wheel, TCollection_ExtendedString("Wheel"))
+    for name, x in (("Wheel_FL", 0.0), ("Wheel_RL", 2600.0)):
+        move = gp_Trsf()
+        move.SetTranslation(gp_Vec(x, 0, 0))
+        component = shape_tool.AddComponent(asm, wheel, TopLoc_Location(move))
+        TDataStd_Name.Set_s(component, TCollection_ExtendedString(name))
+    shape_tool.UpdateAssemblies()
+    writer = STEPCAFControl_Writer()
+    writer.SetNameMode(True)
+    assert writer.Transfer(doc, STEPControl_AsIs)
+    path = data_dir / "instanced.step"
+    writer.Write(str(path))
+    return path

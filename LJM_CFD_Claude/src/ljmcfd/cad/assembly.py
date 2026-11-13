@@ -80,18 +80,9 @@ class Part:
 
     @property
     def hull_points(self) -> np.ndarray:
-        """境界計算用の凸包頂点 (ローカル座標)。全点を毎回変換しないための縮約。"""
+        """境界計算用の凸包頂点 (ローカル座標)。インポート時にジョブ側で計算済み。"""
         if self._hull is None:
-            pts = np.asarray(self.surface.points, dtype=float)
-            hull = pts
-            if len(pts) > 64:
-                try:
-                    from scipy.spatial import ConvexHull
-
-                    hull = pts[ConvexHull(pts).vertices]
-                except Exception:  # noqa: BLE001 - 平面形状などで凸包が作れない場合は全点を使う
-                    hull = pts
-            self._hull = hull
+            self._hull = np.load(Path(self.cache_dir) / self.entry["hull"])
         return self._hull
 
     def base_matrix(self) -> np.ndarray:
@@ -110,6 +101,7 @@ class Assembly:
     def __init__(self) -> None:
         self.parts: list[Part] = []
         self.pose = Pose()
+        self._bounds_cache: dict[tuple, tuple[float, ...] | None] = {}
 
     # ------------------------------------------------------------------ 構成
     def get(self, part_id: str) -> Part:
@@ -151,14 +143,30 @@ class Assembly:
         self.pose = Pose()
 
     # ------------------------------------------------------------------ 変換
-    def _bounds(self, parts, matrix_of) -> tuple[float, ...] | None:
-        return merge_bounds(
-            bounds_of_points(transform_points(matrix_of(p), p.hull_points)) for p in parts
+    @staticmethod
+    def _pose_key(pose: Pose) -> tuple:
+        return (pose.tx, pose.ty, pose.tz, pose.yaw, pose.pitch, pose.roll)
+
+    def _bounds(self, parts, matrix_of, with_attitude: bool) -> tuple[float, ...] | None:
+        """境界の計算。GUI は 1 回の操作で何度も問い合わせるため、状態が同じ間は結果を再利用する。"""
+        key = (
+            with_attitude,
+            self._pose_key(self.pose) if with_attitude else None,
+            # 車両姿勢の回転中心は全パーツの配置から決まるので、対象外のパーツの状態もキーに含める
+            tuple((p.id, p.unit, self._pose_key(p.pose)) for p in self.parts),
+            tuple(p.id for p in parts),
         )
+        if key not in self._bounds_cache:
+            if len(self._bounds_cache) > 256:
+                self._bounds_cache.clear()
+            self._bounds_cache[key] = merge_bounds(
+                bounds_of_points(transform_points(matrix_of(p), p.hull_points)) for p in parts
+            )
+        return self._bounds_cache[key]
 
     def base_bounds(self, parts=None) -> tuple[float, ...] | None:
         """車両姿勢を適用する前 (パーツ配置のみ) の境界 [m]。"""
-        return self._bounds(self.parts if parts is None else parts, lambda p: p.base_matrix())
+        return self._bounds(self.parts if parts is None else parts, lambda p: p.base_matrix(), False)
 
     def attitude_pivot(self) -> np.ndarray:
         """車両姿勢の回転中心 [m]: 姿勢適用前の全体境界の XY 中心・最下点。"""
@@ -182,7 +190,7 @@ class Assembly:
         if visible_only:
             parts = [p for p in parts if p.visible]
         attitude = self.attitude_matrix()
-        return self._bounds(parts, lambda p: self.world_matrix(p, attitude))
+        return self._bounds(parts, lambda p: self.world_matrix(p, attitude), True)
 
     # ------------------------------------------------------------------ 配置補助
     def drop_to_ground(self, clearance: float = 0.0) -> float:
