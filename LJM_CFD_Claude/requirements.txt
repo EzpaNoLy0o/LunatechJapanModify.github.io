@@ -1,0 +1,11 @@
+# LJM CFD (Claude edition) — Python 3.12 / Windows 11 x64
+# cadquery-ocp は対応する VTK を厳密に固定するため、vtk は必ず同じ版を使うこと。
+PySide6>=6.7,<6.13
+cadquery-ocp==8.0.1.1.0
+vtk==9.6.2
+pyvista>=0.46,<0.50
+pyvistaqt>=0.11.3,<0.14
+gmsh>=4.13,<4.16
+numpy>=2.0
+scipy>=1.13
+pyqtgraph>=0.13.7
