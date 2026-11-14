@@ -68,11 +68,13 @@ def test_layout_is_resizable_and_japanese(window):
     assert window.main_splitter.count() == 3 and window.outer_splitter.count() == 2
     assert window.main_splitter.widget(1) is window.viewport          # 中央が 3D ビュー
     assert window.outer_splitter.widget(1) is window.bottom_tabs      # 下部がログ
-    assert [window.bottom_tabs.tabText(i) for i in range(window.bottom_tabs.count())] == ["ログ", "形状検査"]
+    assert [window.bottom_tabs.tabText(i) for i in range(window.bottom_tabs.count())] == ["ログ", "形状検査", "メッシュ品質"]
     before = window.main_splitter.sizes()
     window.main_splitter.setSizes([500, 600, 300])
     assert window.main_splitter.sizes() != before
     assert "起動しました" in window.log_panel.toPlainText()
+    assert [window.left_tabs.tabText(i) for i in range(window.left_tabs.count())] == ["モデル", "風洞", "メッシュ"]
+    assert [window.right_tabs.tabText(i) for i in range(window.right_tabs.count())] == ["表示・結果", "風洞・メッシュ"]
     # CFD 未実装の段階で数値を表示しない
     assert all(label.text() == "未計算" for label in window.display_panel.result_labels.values())
 

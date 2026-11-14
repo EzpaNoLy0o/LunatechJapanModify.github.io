@@ -20,12 +20,12 @@ ERROR = "#ef5f5f"
 VIEW_THEMES = {
     "dark": {
         "bottom": "#0d0f13", "top": "#262c38",
-        "edge": "#0b0d10", "grid": "#3a4352", "grid_major": "#56627a",
+        "edge": "#0b0d10", "mesh_edge": "#2a313c", "grid": "#3a4352", "grid_major": "#56627a",
         "text": "#d7dce4", "bbox": "#22b8e6", "measure": "#ffd166",
     },
     "light": {
         "bottom": "#dfe5ec", "top": "#ffffff",
-        "edge": "#2b2f36", "grid": "#c3cad4", "grid_major": "#98a2b3",
+        "edge": "#2b2f36", "mesh_edge": "#5a6475", "grid": "#c3cad4", "grid_major": "#98a2b3",
         "text": "#1b1f26", "bbox": "#0b7fa8", "measure": "#c2410c",
     },
 }

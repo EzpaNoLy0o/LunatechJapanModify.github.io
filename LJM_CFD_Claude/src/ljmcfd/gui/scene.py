@@ -9,6 +9,10 @@ from ..cad.assembly import Assembly, Part
 from ..cad.surface import FACE_ID
 from ..core.pose import Pose
 from ..core.project import PartRecord
+from ..mesh.request import analysis_parts, build_mesh_request
+from ..mesh.settings import MeshSettings
+from ..tunnel import spec as tunnel_spec
+from ..tunnel.spec import TunnelSpec
 
 
 class Scene(QObject):
@@ -21,6 +25,9 @@ class Scene(QObject):
     displayUnitChanged = Signal(str)
     cleared = Signal()
     modified = Signal()                 # プロジェクトへ保存すべき変更があった
+    tunnelChanged = Signal()            # 風洞・流れの条件の変更
+    meshSettingsChanged = Signal()
+    meshChanged = Signal()              # メッシュ (レポート) の生成・破棄
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -28,6 +35,9 @@ class Scene(QObject):
         self.selected_ids: list[str] = []
         self.selected_face: tuple[str, int] | None = None   # (part id, face id)
         self.display_unit = "mm"
+        self.tunnel = TunnelSpec()
+        self.mesh_settings = MeshSettings()
+        self.mesh_report: dict | None = None    # 生成済みメッシュのレポート (無ければ None)
 
     # ------------------------------------------------------------------ 参照
     @property
@@ -80,7 +90,13 @@ class Scene(QObject):
         self.assembly.clear()
         self.selected_ids = []
         self.selected_face = None
+        self.tunnel = TunnelSpec()
+        self.mesh_settings = MeshSettings()
+        self.mesh_report = None
         self.cleared.emit()
+        self.tunnelChanged.emit()
+        self.meshSettingsChanged.emit()
+        self.meshChanged.emit()
         self.selectionChanged.emit()
         self.faceSelectionChanged.emit()
         self.transformsChanged.emit()
@@ -213,3 +229,52 @@ class Scene(QObject):
             )
             for p in self.assembly.parts
         ]
+
+    # ------------------------------------------------------------------ 風洞・メッシュ
+    def analysis_bounds(self) -> tuple[float, ...] | None:
+        """解析対象 (表示中のパーツ) のワールド境界 [m]。"""
+        return self.assembly.world_bounds(analysis_parts(self.assembly))
+
+    def auto_size_tunnel(self) -> bool:
+        """モデル寸法から風洞の余白を既定値にし、メッシュのプリセットも寸法に合わせる。"""
+        bounds = self.analysis_bounds()
+        if bounds is None:
+            return False
+        tunnel_spec.apply_mode_defaults(self.tunnel, bounds)
+        self.mesh_settings.apply_preset(self.mesh_settings.preset, bounds)
+        self.tunnelChanged.emit()
+        self.meshSettingsChanged.emit()
+        self.modified.emit()
+        return True
+
+    def notify_tunnel_changed(self) -> None:
+        """``self.tunnel`` を直接書き換えた後に呼ぶ。"""
+        self.tunnelChanged.emit()
+        self.modified.emit()
+
+    def notify_mesh_settings_changed(self) -> None:
+        self.meshSettingsChanged.emit()
+        self.modified.emit()
+
+    def set_mesh_report(self, report: dict | None) -> None:
+        self.mesh_report = report
+        self.meshChanged.emit()
+
+    def tunnel_issues(self) -> list[tuple[str, str]]:
+        bounds = self.analysis_bounds()
+        if bounds is None:
+            return [("error", "解析対象のパーツがありません。CAD を読み込んでください。")]
+        return tunnel_spec.validate(self.tunnel, bounds)
+
+    def mesh_request(self, out_dir) -> dict:
+        """現在の状態からメッシュ生成ジョブの引数を作る。"""
+        return build_mesh_request(self.assembly, self.tunnel, self.mesh_settings, out_dir)
+
+    def mesh_state(self) -> str:
+        """メッシュの状態: "none" (未生成) / "current" (最新) / "stale" (設定変更後に未再生成)。"""
+        if self.mesh_report is None:
+            return "none"
+        if self.analysis_bounds() is None:
+            return "stale"
+        current = self.mesh_request("")["input_hash"]
+        return "current" if current == self.mesh_report.get("input_hash") else "stale"

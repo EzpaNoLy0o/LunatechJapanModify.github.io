@@ -165,6 +165,15 @@ class JobManager(QObject):
     def is_busy(self) -> bool:
         return self._current is not None or bool(self._queue)
 
+    def cancel(self, job: Job) -> None:
+        """指定したジョブだけを止める (実行待ちなら待ち行列から外す)。"""
+        if job in self._queue:
+            self._queue.remove(job)
+            job.failed.emit("キャンセルされました", "")
+            job.finished.emit()
+        elif job is self._current:
+            job.cancel()
+
     def cancel_all(self) -> None:
         self._queue.clear()
         if self._current is not None:

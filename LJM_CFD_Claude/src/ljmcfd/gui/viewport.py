@@ -70,6 +70,11 @@ class Viewport(QWidget):
         self.show_bbox = True
         self.show_ground = True
         self.snap_to_vertex = True
+        self.show_tunnel = True
+        self.show_mesh_surface = False
+        self.show_mesh_ground = False
+        self._mesh: dict | None = None          # 読み込んだメッシュ (境界面・体積セル・セルごとの座標範囲)
+        self._section: tuple[bool, str, float] = (False, "y", 0.0)
         self._actors: dict[str, dict] = {}
         self._actor_to_part: dict[str, str] = {}
         self._measure_points: list[np.ndarray] = []
@@ -91,6 +96,8 @@ class Viewport(QWidget):
         scene.faceSelectionChanged.connect(self._update_face_highlight)
         scene.displayUnitChanged.connect(self._on_display_unit_changed)
         scene.cleared.connect(self._on_cleared)
+        scene.tunnelChanged.connect(self._on_tunnel_changed)
+        scene.meshChanged.connect(self._on_mesh_changed)
 
         self._update_ground()
         self.set_view("iso")
@@ -124,6 +131,8 @@ class Viewport(QWidget):
         self._update_ground()
         self._update_bbox()
         self._update_measure_overlay()
+        self._update_tunnel()
+        self._update_mesh_actors()
         self.request_render()
 
     def set_theme(self, name: str) -> None:
@@ -145,8 +154,8 @@ class Viewport(QWidget):
 
     def set_show_edges(self, show: bool) -> None:
         self.show_edges = bool(show)
-        for part_id, entry in self._actors.items():
-            entry["edges"].SetVisibility(self.show_edges and self.scene.assembly.get(part_id).visible)
+        for part_id in self._actors:
+            self._apply_part_visibility(part_id)
         self.request_render()
 
     def set_show_bbox(self, show: bool) -> None:
@@ -238,10 +247,9 @@ class Viewport(QWidget):
                 part.edges, color=self.colors["edge"], line_width=1.0, lighting=False,
                 pickable=False, reset_camera=False, render=False, name=f"edges:{part.id}",
             )
-            surface.SetVisibility(part.visible)
-            edges.SetVisibility(part.visible and self.show_edges)
             self._actors[part.id] = {"surface": surface, "edges": edges, "defects": None}
             self._actor_to_part[surface.GetAddressAsString("")] = part.id
+            self._apply_part_visibility(part.id)
         self._update_matrices()
         if first:
             self.set_view("iso")
@@ -270,12 +278,21 @@ class Viewport(QWidget):
         if entry is None:
             return
         part = self.scene.assembly.get(part_id)
-        entry["surface"].SetVisibility(part.visible)
-        entry["edges"].SetVisibility(part.visible and self.show_edges)
-        if entry["defects"] is not None:
-            entry["defects"].SetVisibility(part.visible)
+        self._apply_part_visibility(part_id)
         self._apply_part_color(part)
         self.request_render()
+
+    def _cad_shown(self, part: Part) -> bool:
+        """CAD 形状を描くか。メッシュ表面の表示中は、重なって見づらいので CAD 側を隠す。"""
+        return part.visible and not self.show_mesh_surface
+
+    def _apply_part_visibility(self, part_id: str) -> None:
+        entry = self._actors[part_id]
+        shown = self._cad_shown(self.scene.assembly.get(part_id))
+        entry["surface"].SetVisibility(shown)
+        entry["edges"].SetVisibility(shown and self.show_edges)
+        if entry["defects"] is not None:
+            entry["defects"].SetVisibility(shown)
 
     def _apply_part_color(self, part: Part) -> None:
         entry = self._actors.get(part.id)
@@ -299,6 +316,7 @@ class Viewport(QWidget):
         self._update_bbox()
         self._update_ground()
         self._update_face_highlight()
+        self._update_tunnel()
         self.request_render()
 
     def _on_selection_changed(self) -> None:
@@ -426,9 +444,159 @@ class Viewport(QWidget):
                 pickable=False, reset_camera=False, render=False, name=f"defects:{part_id}",
             )
             actor.user_matrix = self.scene.assembly.world_matrix(part)
-            actor.SetVisibility(part.visible)
+            actor.SetVisibility(self._cad_shown(part))
             entry["defects"] = actor
         self.request_render()
+
+    # ------------------------------------------------------------------ 風洞
+    def set_show_tunnel(self, show: bool) -> None:
+        self.show_tunnel = bool(show)
+        self._update_tunnel()
+        self.request_render()
+
+    def _on_tunnel_changed(self) -> None:
+        self._update_tunnel()
+        self.request_render()
+
+    def tunnel_bounds(self) -> tuple[float, ...] | None:
+        """生成済みの風洞の計算領域 [m]。未生成・パーツなしなら ``None``。"""
+        bounds = self.scene.analysis_bounds()
+        if bounds is None or not self.scene.tunnel.generated:
+            return None
+        return self.scene.tunnel.domain_bounds(bounds)
+
+    def _update_tunnel(self) -> None:
+        names = ("tunnel_box", "tunnel_inlet", "tunnel_outlet", "tunnel_ground", "tunnel_labels")
+        for name in names:
+            self.plotter.remove_actor(name, reset_camera=False, render=False)
+        domain = self.tunnel_bounds() if self.show_tunnel else None
+        if domain is None:
+            return
+        x0, x1, y0, y1, z0, z1 = domain
+        common = dict(lighting=False, pickable=False, reset_camera=False, render=False)
+        self.plotter.add_mesh(pv.Box(bounds=domain).outline(), color=self.colors["bbox"], line_width=1.5,
+                              name="tunnel_box", **common)
+
+        def plane_x(x):
+            return pv.Plane(center=(x, (y0 + y1) / 2, (z0 + z1) / 2), direction=(1, 0, 0), i_size=z1 - z0, j_size=y1 - y0)
+
+        self.plotter.add_mesh(plane_x(x0), color=(0.2, 0.55, 1.0), opacity=0.18, name="tunnel_inlet", **common)
+        self.plotter.add_mesh(plane_x(x1), color=(1.0, 0.3, 0.25), opacity=0.18, name="tunnel_outlet", **common)
+        if self.scene.tunnel.has_ground:
+            ground = pv.Plane(center=((x0 + x1) / 2, (y0 + y1) / 2, z0), direction=(0, 0, 1), i_size=x1 - x0, j_size=y1 - y0)
+            self.plotter.add_mesh(ground, color=(0.5, 0.5, 0.5), opacity=0.12, name="tunnel_ground", **common)
+        anchors = np.array([[x0, (y0 + y1) / 2, z1], [x1, (y0 + y1) / 2, z1]])
+        self.plotter.add_point_labels(anchors, ["INLET", "OUTLET"], name="tunnel_labels", **self._label_kwargs())
+
+    def fit_tunnel(self) -> None:
+        domain = self.tunnel_bounds()
+        if domain is None:
+            self.fit()
+            return
+        self.plotter.reset_camera(bounds=domain, render=False)
+        self.request_render()
+
+    # ------------------------------------------------------------------ メッシュ
+    def _on_mesh_changed(self) -> None:
+        """メッシュが生成・破棄された。表示用データは必要になったときに読み込む。"""
+        self._mesh = None
+        if self.scene.mesh_report is None:
+            self.show_mesh_surface = self.show_mesh_ground = False
+            self._section = (False, self._section[1], self._section[2])
+            for part_id in self._actors:
+                self._apply_part_visibility(part_id)
+        self._update_mesh_actors()
+        self.request_render()
+
+    def _mesh_data(self) -> dict | None:
+        report = self.scene.mesh_report
+        if report is None:
+            return None
+        if self._mesh is None:
+            folder = Path(report["out_dir"])
+            self._mesh = {
+                "boundary": pv.read(folder / report["files"]["boundary"]),
+                "volume": None, "ranges": {},
+                "patches": [p["name"] for p in report["patches"]],
+                "part_patches": [i for i, p in enumerate(report["patches"]) if p.get("kind") == "part"],
+                "volume_path": folder / report["files"]["volume"],
+            }
+        return self._mesh
+
+    def _volume(self):
+        data = self._mesh_data()
+        if data["volume"] is None:
+            data["volume"] = pv.read(data["volume_path"])
+        return data["volume"]
+
+    def mesh_axis_range(self, axis: str) -> tuple[float, float] | None:
+        """メッシュ断面を動かせる範囲 (計算領域の端から端まで) [m]。"""
+        report = self.scene.mesh_report
+        if report is None:
+            return None
+        index = "xyz".index(axis)
+        return (report["domain"][2 * index], report["domain"][2 * index + 1])
+
+    def set_show_mesh_surface(self, show: bool) -> None:
+        self.show_mesh_surface = bool(show) and self.scene.mesh_report is not None
+        for part_id in self._actors:
+            self._apply_part_visibility(part_id)
+        self._update_mesh_actors()
+        self.request_render()
+
+    def set_show_mesh_ground(self, show: bool) -> None:
+        self.show_mesh_ground = bool(show) and self.scene.mesh_report is not None
+        self._update_mesh_actors()
+        self.request_render()
+
+    def set_mesh_section(self, enabled: bool, axis: str, position: float) -> None:
+        """体積メッシュの断面 (指定位置の平面が横切るセル) を表示する。メッシュは再生成しない。"""
+        self._section = (bool(enabled) and self.scene.mesh_report is not None, axis, float(position))
+        self._update_mesh_section()
+        self.request_render()
+
+    def _update_mesh_actors(self) -> None:
+        for name in ("mesh_surface", "mesh_ground"):
+            self.plotter.remove_actor(name, reset_camera=False, render=False)
+        data = self._mesh_data() if (self.show_mesh_surface or self.show_mesh_ground) else None
+        if data is not None:
+            boundary = data["boundary"]
+            patch = np.asarray(boundary.cell_data["patch"])
+            common = dict(show_edges=True, edge_color=self.colors["mesh_edge"], line_width=1.0, scalars=None,
+                          pickable=False, reset_camera=False, render=False)
+            if self.show_mesh_surface:
+                cells = np.flatnonzero(np.isin(patch, data["part_patches"]))
+                self.plotter.add_mesh(boundary.extract_cells(cells), color=(0.80, 0.83, 0.88), name="mesh_surface", **common)
+            if self.show_mesh_ground and "ground" in data["patches"]:
+                cells = np.flatnonzero(patch == data["patches"].index("ground"))
+                self.plotter.add_mesh(boundary.extract_cells(cells), color=(0.42, 0.46, 0.52), name="mesh_ground", **common)
+        self._update_mesh_section()
+
+    def mesh_section_cells(self, axis: str, position: float) -> np.ndarray:
+        """平面 ``axis = position`` が横切る体積セルの番号。"""
+        data = self._mesh_data()
+        volume = self._volume()
+        if axis not in data["ranges"]:
+            # セルごとの座標の最小・最大を 1 回だけ計算しておく (以後のスライダー操作は比較だけで済む)
+            values = np.asarray(volume.points)[volume.cell_connectivity, "xyz".index(axis)]
+            offsets = volume.cell_offsets if hasattr(volume, "cell_offsets") else volume.offset
+            starts = np.asarray(offsets)[:-1]
+            data["ranges"][axis] = (np.minimum.reduceat(values, starts), np.maximum.reduceat(values, starts))
+        lo, hi = data["ranges"][axis]
+        return np.flatnonzero((lo <= position) & (hi >= position))
+
+    def _update_mesh_section(self) -> None:
+        self.plotter.remove_actor("mesh_section", reset_camera=False, render=False)
+        enabled, axis, position = self._section
+        if not enabled or self.scene.mesh_report is None:
+            return
+        cells = self.mesh_section_cells(axis, position)
+        if len(cells) == 0:
+            return
+        self.plotter.add_mesh(
+            self._volume().extract_cells(cells), color=(0.25, 0.72, 0.86), show_edges=True, edge_color=self.colors["mesh_edge"],
+            line_width=1.0, scalars=None, pickable=False, reset_camera=False, render=False, name="mesh_section",
+        )
 
     # ------------------------------------------------------------------ 計測
     def clear_measurement(self) -> None:
@@ -519,7 +687,7 @@ class Viewport(QWidget):
         self._picker.InitializePickList()
         for part in self.scene.parts:
             entry = self._actors.get(part.id)
-            if entry is not None and part.visible:
+            if entry is not None and self._cad_shown(part):
                 self._picker.AddPickList(entry["surface"])
         if not self._picker.Pick(vx, vy, 0.0, self.plotter.renderer):
             return None

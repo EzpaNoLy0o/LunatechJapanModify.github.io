@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import platform
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -19,6 +20,11 @@ from ..cad.import_job import SUPPORTED_SUFFIXES, load_cached_meta
 from ..core import paths
 from ..core.pose import Pose
 from ..core.project import PROJECT_FILE, Project, ProjectError, load_project, save_project
+from ..mesh.gmsh_job import load_report
+from ..mesh.request import part_payloads
+from ..mesh.settings import MeshSettings
+from ..tunnel.spec import TunnelSpec
+from .analysis_panels import MeshDisplayPanel, MeshPanel, MeshQualityView, TunnelPanel
 from .job_runner import JobManager
 from .panels import DisplayPanel, InspectionTable, LogPanel, ModelPanel, PartTree, scrollable
 from .scene import Scene
@@ -43,6 +49,8 @@ class MainWindow(QMainWindow):
         self._pending_restore = 0
         self._restore_problems: list[str] = []
         self._restore_view: dict | None = None
+        self._scratch_dir: Path | None = None     # 未保存プロジェクトの作業フォルダ
+        self._mesh_job = None
 
         self.setAcceptDrops(True)
         self.resize(1600, 960)
@@ -69,6 +77,10 @@ class MainWindow(QMainWindow):
         # 左: パーツツリー (上) + 設定タブ (下)
         self.left_tabs = QTabWidget()
         self.left_tabs.addTab(scrollable(self.model_panel), "モデル")
+        self.tunnel_panel = TunnelPanel(self.scene)
+        self.mesh_panel = MeshPanel(self.scene)
+        self.left_tabs.addTab(scrollable(self.tunnel_panel), "風洞")
+        self.left_tabs.addTab(scrollable(self.mesh_panel), "メッシュ")
         self.left_splitter = QSplitter(Qt.Vertical)
         self.left_splitter.addWidget(self._titled("モデル・パーツ", self.part_tree))
         self.left_splitter.addWidget(self.left_tabs)
@@ -77,6 +89,8 @@ class MainWindow(QMainWindow):
         # 右: 可視化設定・結果
         self.right_tabs = QTabWidget()
         self.right_tabs.addTab(scrollable(self.display_panel), "表示・結果")
+        self.mesh_display = MeshDisplayPanel(self.scene, self.viewport)
+        self.right_tabs.addTab(scrollable(self.mesh_display), "風洞・メッシュ")
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.left_splitter)
@@ -85,12 +99,14 @@ class MainWindow(QMainWindow):
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 1)
         self.main_splitter.setStretchFactor(2, 0)
-        self.main_splitter.setSizes([340, 940, 320])
+        self.main_splitter.setSizes([390, 880, 330])
 
-        # 下: ログ・検査結果 (Stage 3 以降で残差グラフ・スライダーが加わる)
+        # 下: ログ・検査結果・メッシュ品質 (Stage 3 以降で残差グラフ・スライダーが加わる)
         self.bottom_tabs = QTabWidget()
         self.bottom_tabs.addTab(self.log_panel, "ログ")
         self.bottom_tabs.addTab(self.inspection_table, "形状検査")
+        self.mesh_quality = MeshQualityView(self.scene)
+        self.bottom_tabs.addTab(self.mesh_quality, "メッシュ品質")
 
         self.outer_splitter = QSplitter(Qt.Vertical)
         self.outer_splitter.addWidget(self.main_splitter)
@@ -223,6 +239,9 @@ class MainWindow(QMainWindow):
         self.viewport.backgroundClicked.connect(self._on_background_clicked)
         self.part_tree.inspectRequested.connect(self.inspect_parts)
         self.part_tree.removeRequested.connect(self.scene.remove_parts)
+        self.tunnel_panel.generateRequested.connect(self.generate_tunnel)
+        self.mesh_panel.generateRequested.connect(self.generate_mesh)
+        self.mesh_panel.stopRequested.connect(self.stop_mesh)
         self.scene.modified.connect(self._on_modified)
         self.jobs.progress.connect(self._on_job_progress)
         self.jobs.busyChanged.connect(self._on_busy_changed)
@@ -311,6 +330,8 @@ class MainWindow(QMainWindow):
 
     def _on_import_done(self, meta: dict) -> None:
         parts = self.scene.add_import(meta)
+        if self.scene.tunnel.margin_front <= 0:
+            self.scene.auto_size_tunnel()      # 最初の読み込み時に、風洞とメッシュの寸法をモデルへ合わせる
         name = Path(meta["source"]["path"]).name
         logger.info("%s: %d パーツを追加しました", name, len(parts))
         if meta["unit_source"] == "heuristic":
@@ -367,6 +388,128 @@ class MainWindow(QMainWindow):
         log = {"ok": logger.info, "warning": logger.warning, "error": logger.error}[summary["level"]]
         log("形状検査 [%s]: %s", part.name, " ".join(summary["messages"]))
 
+    # ------------------------------------------------------------------ 仮想風洞
+    def generate_tunnel(self) -> bool:
+        """風洞を確定して 3D に表示し、前面投影面積 (閉塞率・基準面積用) を計算する。"""
+        issues = self.scene.tunnel_issues()
+        errors = [text for level, text in issues if level == "error"]
+        if errors:
+            for text in errors:
+                logger.error("風洞を生成できません: %s", text)
+            QMessageBox.warning(self, "風洞を生成できません", "\n".join(errors))
+            return False
+        tunnel = self.scene.tunnel
+        tunnel.generated = True
+        tunnel.frontal_area = None          # 姿勢が変わっている可能性があるので計算し直す
+        self.scene.notify_tunnel_changed()
+        bounds = self.scene.analysis_bounds()
+        d = tunnel.domain_bounds(bounds)
+        logger.info("風洞を生成しました: %.2f × %.2f × %.2f m、風速 %.1f km/h (%.2f m/s)",
+                    d[1] - d[0], d[3] - d[2], d[5] - d[4], tunnel.flow.speed_kmh, tunnel.flow.speed_ms)
+        for level, text in issues:
+            (logger.warning if level == "warning" else logger.info)("風洞: %s", text)
+        self.jobs.submit(
+            "frontal-area",
+            {"parts": part_payloads(self.scene.assembly),
+             "clip_below_z": tunnel.model_sink(bounds) if tunnel.has_ground else None},
+            label="前面投影面積",
+            on_success=self._on_frontal_area,
+        )
+        return True
+
+    def _on_frontal_area(self, result: dict) -> None:
+        tunnel = self.scene.tunnel
+        tunnel.frontal_area = float(result["area"])
+        self.scene.notify_tunnel_changed()
+        bounds = self.scene.analysis_bounds()
+        blockage = tunnel.blockage_ratio(bounds) if bounds else None
+        logger.info("前面投影面積: %.4f m²%s", tunnel.frontal_area,
+                    "" if blockage is None else f" (閉塞率 {blockage * 100:.2f} %)")
+
+    # ------------------------------------------------------------------ メッシュ
+    def work_dir(self) -> Path:
+        """メッシュ・解析結果を置くフォルダ。未保存の間は作業フォルダ内の一時的な場所を使う。"""
+        if self.project_dir is not None:
+            return self.project_dir
+        if self._scratch_dir is None:
+            self._scratch_dir = paths.workspace_root() / "unsaved" / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            self._scratch_dir.mkdir(parents=True, exist_ok=True)
+        return self._scratch_dir
+
+    def mesh_dir(self) -> Path:
+        return self.work_dir() / "mesh"
+
+    def _move_results_into(self, project_dir: Path) -> None:
+        """保存先が変わるとき、生成済みメッシュを新しいプロジェクトフォルダへ引き継ぐ。"""
+        report = self.scene.mesh_report
+        if report is None:
+            return
+        source, target = Path(report["out_dir"]), project_dir / "mesh"
+        if source.resolve() == target.resolve():
+            return
+        project_dir.mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(target, ignore_errors=True)
+        shutil.copytree(source, target)
+        if self._scratch_dir is not None and self._scratch_dir in source.parents:
+            shutil.rmtree(self._scratch_dir, ignore_errors=True)
+            self._scratch_dir = None
+        report["out_dir"] = str(target)
+        self.viewport._mesh = None      # 読み込み元のパスが変わったので表示データを読み直させる
+
+    def generate_mesh(self) -> bool:
+        """現在の形状・姿勢・風洞・メッシュ設定でメッシュを生成する (別プロセス)。"""
+        if self._mesh_job is not None:
+            return False
+        if not self.scene.parts:
+            QMessageBox.information(self, "メッシュ生成", "先に CAD を読み込んでください。")
+            return False
+        if not self.scene.tunnel.generated and not self.generate_tunnel():
+            return False
+        problems = [text for level, text in self.scene.tunnel_issues() if level == "error"]
+        problems += self.scene.mesh_settings.validate()
+        if problems:
+            for text in problems:
+                logger.error("メッシュを生成できません: %s", text)
+            QMessageBox.warning(self, "メッシュを生成できません", "\n".join(problems))
+            return False
+        request = self.scene.mesh_request(self.mesh_dir())
+        logger.info("メッシュ生成を開始します (表面サイズ %.1f mm、遠方 %.0f mm、境界層 %s)",
+                    self.scene.mesh_settings.surface_size * 1000, self.scene.mesh_settings.far_size * 1000,
+                    "あり" if self.scene.mesh_settings.boundary_layer.enabled else "なし")
+        self.mesh_panel.set_running(True)
+        self._mesh_job = self.jobs.submit(
+            "mesh-generate", request, label="メッシュ生成",
+            on_success=self._on_mesh_done, on_failure=self._on_mesh_failed,
+        )
+        return True
+
+    def stop_mesh(self) -> None:
+        if self._mesh_job is not None:
+            logger.warning("メッシュ生成を停止します")
+            self.jobs.cancel(self._mesh_job)
+
+    def _on_mesh_done(self, report: dict) -> None:
+        self._mesh_job = None
+        self.mesh_panel.set_running(False)
+        self.scene.set_mesh_report(report)
+        quality = report["quality"]
+        summary = quality["summary"]
+        log = {"ok": logger.info, "warning": logger.warning, "error": logger.error}[summary["level"]]
+        log("メッシュ品質: %s", " ".join(summary["messages"]))
+        if not report["boundary_layer"]["generated"]:
+            logger.warning("境界層プリズムは生成されていません。粘性抗力と Cd の精度は限定的です。")
+        self.bottom_tabs.setCurrentWidget(self.mesh_quality)
+        self.statusBar().showMessage(f"メッシュ生成完了: {quality['n_cells']:,} セル", 10000)
+        self._on_modified()
+
+    def _on_mesh_failed(self, message: str, detail: str) -> None:
+        self._mesh_job = None
+        self.mesh_panel.set_running(False)
+        if detail:
+            logger.error("詳細:\n%s", detail)
+        if message != "キャンセルされました":
+            QMessageBox.critical(self, "メッシュ生成失敗", message)
+
     # ------------------------------------------------------------------ プロジェクト
     def _confirm_discard(self) -> bool:
         if not self._modified:
@@ -388,6 +531,7 @@ class MainWindow(QMainWindow):
         self.scene.clear()
         self.project = Project()
         self.project_dir = None
+        self._scratch_dir = None
         self._set_clean()
 
     def _projects_root(self) -> Path:
@@ -415,7 +559,12 @@ class MainWindow(QMainWindow):
         project.parts = self.scene.to_records()
         project.vehicle_pose = Pose(**self.scene.assembly.pose.to_dict())
         project.view = self.display_panel.view_settings()
+        project.sections["tunnel"] = self.scene.tunnel.to_dict()
+        project.sections["mesh"] = {
+            "settings": self.scene.mesh_settings.to_dict(), "display": self.mesh_display.settings(),
+        }
         try:
+            self._move_results_into(project_dir)
             file = save_project(project, project_dir)
         except OSError as exc:
             logger.exception("プロジェクトを保存できません")
@@ -451,6 +600,11 @@ class MainWindow(QMainWindow):
         self.project_dir = project_dir
         self.scene.assembly.pose = Pose(**project.vehicle_pose.to_dict())
         self.scene.set_display_unit(project.display_unit)
+        self.scene.tunnel = TunnelSpec.from_dict(project.sections.get("tunnel"))
+        self.scene.mesh_settings = MeshSettings.from_dict(project.sections.get("mesh", {}).get("settings"))
+        self.scene.tunnelChanged.emit()
+        self.scene.meshSettingsChanged.emit()
+        self._scratch_dir = None
         self._restore_view = dict(project.view)
         self._restore_problems = []
 
@@ -493,6 +647,10 @@ class MainWindow(QMainWindow):
             self._finish_restore()
 
     def _finish_restore(self) -> None:
+        # 保存済みメッシュがあれば再読み込みする (再生成はしない)
+        self.scene.set_mesh_report(load_report(self.mesh_dir()) if self.project_dir else None)
+        self.mesh_display.apply_settings(self.project.sections.get("mesh", {}).get("display", {}))
+        self.scene.tunnelChanged.emit()
         if self._restore_view:
             self.display_panel.apply_view_settings(self._restore_view)
         self._restore_view = None
@@ -528,8 +686,8 @@ class MainWindow(QMainWindow):
 
         lines = [
             f"<b>{APP_NAME} {APP_EDITION}</b> v{__version__}",
-            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD 読み込み・3D 表示・モデル操作)",
-            "未実装: 仮想風洞・メッシュ生成 (Stage 2)、OpenFOAM 解析 (Stage 3)、結果可視化 (Stage 4-5)",
+            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD 読み込み・モデル操作・仮想風洞・メッシュ生成)",
+            "未実装: OpenFOAM 解析 (Stage 3)、結果可視化 (Stage 4-5)",
             "",
             f"Python {platform.python_version()} / PySide6 {PySide6.__version__} / "
             f"VTK {vtk.vtkVersion.GetVTKVersion()} / PyVista {pv.__version__}",

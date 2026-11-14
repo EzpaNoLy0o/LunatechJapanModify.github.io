@@ -3,8 +3,8 @@
 Windows 11 で動作する自動車専用 CFD ワークベンチの全体設計です。
 Stage 1〜6 を通して変わらない骨格と、各ステージで追加するモジュールを定めます。
 
-- **実装済み**: Stage 1（GUI・3D 表示・STEP/IGES/STL 読み込み・モデル操作・形状検査・プロジェクト保存の基礎）
-- **未実装**: Stage 2〜6（本書の該当節は「設計」であり、動作するコードはまだありません）
+- **実装済み**: Stage 1（GUI・3D 表示・CAD 読み込み・モデル操作・形状検査）、Stage 2（仮想風洞・メッシュ生成・品質評価・polyMesh 変換）
+- **未実装**: Stage 3〜6（本書の該当節は「設計」であり、動作するコードはまだありません）
 
 ---
 
@@ -30,7 +30,8 @@ Stage 1〜6 を通して変わらない骨格と、各ステージで追加す�
 │  ジョブ子プロセス  python -m ljmcfd --job <name> <args.json> │
 │   ├ cad-import   STEP/IGES/STL → キャッシュ   [Stage 1 実装済] │
 │   ├ cad-inspect  形状検査                     [Stage 1 実装済] │
-│   ├ mesh-generate  Gmsh                       [Stage 2]       │
+│   ├ frontal-area   前面投影面積               [Stage 2 実装済] │
+│   ├ mesh-generate  Gmsh → polyMesh            [Stage 2 実装済] │
 │   └ solver-run   wsl.exe 経由で OpenFOAM を監視 [Stage 3]     │
 │                            │ wsl.exe -d Ubuntu-24.04 -- bash │
 └────────────────────────────┼───────────────────────────────┘
@@ -86,8 +87,15 @@ C:\LJM_CFD_Claude\                  ← 設置先（既存の LJM CFD とは別�
 │  │  ├ scene.py                    選択状態とシグナル
 │  │  ├ job_runner.py               QProcess ラッパー
 │  │  └ theme.py                    ダークテーマ
-│  ├ tunnel\      [Stage 2]         仮想風洞の寸法決定・解析モード
-│  ├ mesh\        [Stage 2]         メッシュ生成・品質評価・OpenFOAM 変換
+│  ├ tunnel\                        仮想風洞
+│  │  ├ spec.py                     流れの条件・風洞寸法・検証・y+ 概算
+│  │  └ frontal_area.py             前面投影面積 (画像への塗りつぶし)
+│  ├ mesh\                          メッシュ
+│  │  ├ settings.py                 設定・プリセット・入力ハッシュ
+│  │  ├ request.py                  シーン → ジョブ引数
+│  │  ├ gmsh_job.py                 Gmsh による生成ジョブ
+│  │  ├ polymesh.py                 OpenFOAM polyMesh の組み立て・書き出し
+│  │  └ quality.py                  非直交性・歪度などの品質評価
 │  ├ solver\      [Stage 3]         ケース生成・WSL 実行・残差／荷重の解析
 │  └ post\        [Stage 4-5]       結果読み込み・断面・流線・粒子アニメーション
 ├ tests\
@@ -157,17 +165,35 @@ CAD ファイル ─(cad-import ジョブ)→ workspace\cache\cad\<key>\
 ### Stage 1 — 実装済み
 本書 2〜5 節のとおり。詳細は README を参照。
 
-### Stage 2 — 仮想風洞・メッシュ（設計）
-- `tunnel/spec.py`: `TunnelSpec`（解析モード、風速、温度、気圧、密度、乱流強度、前後左右上の余白、地上高、Moving Ground）。
-  モデル境界から風洞寸法を自動決定。閉塞率（前面投影面積 / 風洞断面積）を算出し、大きすぎる場合は警告。
-  解析モードは `VehicleTunnel` / `ComponentTunnel` / `InternalFlow` の戦略クラスで分け、Internal Flow は拡張点として枠だけ用意。
-- `mesh/gmsh_job.py`: キャッシュ済み B-Rep を OCC カーネルへ読み込み、姿勢行列を適用、風洞ボックスから差し引いて流体領域を作成。
-  サイズ場は「表面からの距離」「曲率」「後流ボックス」の合成。STL 由来パーツは表面メッシュから領域を構成。
-- `mesh/quality.py`: 非直交性・歪度・アスペクト比・体積比。OpenFOAM の `checkMesh` 結果（Stage 3 以降）とも突き合わせ。
-- `mesh/foam_export.py`: OpenFOAM `polyMesh` への変換とパッチ分類（inlet / outlet / ground / sides / top / 車体パーツ）。
-- 境界層プリズム: Gmsh の境界層機能で試み、**生成できたか・層数・第 1 層厚さを結果に記録して GUI に表示**。
-  未生成の場合は「粘性抗力と Cd の精度が制限される」ことを結果画面に明示。
-- `MeshBackend` 抽象を置き、将来 `snappyHexMesh` バックエンドを追加可能にする。
+### Stage 2 — 実装済み
+
+- **風洞** (`tunnel/spec.py`): モデルのワールド境界から計算領域を決める。地面は常に Z = 0。
+  解析モードごとの既定値（車両: 前 3L / 後 6L / 左右 3W / 上 4H、地面あり。単体: 各方向 3D〜6D、地面なし）。
+  Internal Flow は定義のみで、選択不可・検証でエラーになる。
+- **前面投影面積** (`tunnel/frontal_area.py`): 三角形を YZ 平面へ投影して高解像度画像へ塗りつぶし、重なりを除いた面積を求める。
+  閉塞率と Cd・Cl の基準面積に使う。未計算の間は閉塞率も基準面積も「未計算」。
+- **メッシュ生成** (`mesh/gmsh_job.py`):
+  1. キャッシュ B-Rep を OCC カーネルへ読み込み、相似変換（拡大・回転・移動）で配置。
+     アフィン変換は曲面を NURBS 化して精度と速度を落とすため使わない。
+  2. 風洞ボックスからモデルを差し引いて流体領域を作る（地面より下・パーツの重なりは自動的に処理される）。
+  3. 外周面は位置で分類、残りはサンプル点から各パーツ表面への距離でパーツへ対応付け、パーツごとの壁面パッチにする。
+  4. サイズ場 = 表面からの距離（パーツ別倍率）・接地線まわり・後流ボックスの最小値 + 曲率。
+  5. 四面体は並列 HXT、失敗時は逐次 Delaunay へ自動で切り替え。
+- **接地の扱い**: 最下点が Z ≈ 0 のモデルは `contact_sink`（既定 10 mm）だけ沈めて有限の接地面を作る。
+  半径 330 mm のタイヤでは 5 mm だと接地端が約 10° のくさびになり品質警告が残る。10 mm で非直交性 70° 未満になる。
+- **polyMesh 変換** (`mesh/polymesh.py`): 自前実装。面の対応付けは節点集合の辞書式ソートで行い、
+  OpenFOAM の順序規約（内部面は owner → neighbour の昇順、法線は owner → neighbour、境界面はパッチごと）に従う。
+  四面体・プリズム・ピラミッド・六面体に対応。
+- **品質評価** (`mesh/quality.py`): OpenFOAM の checkMesh と同じ定義の非直交性・歪度、負体積、開いたセル、
+  外周の閉じ具合、CAD の流体体積との差。**OpenFOAM 実機の checkMesh との突き合わせは Stage 3 で行う。**
+- **境界層プリズム（実験的）**: Gmsh の `extrudeBoundaryLayer`。モデルが地面・壁に接していない場合のみ。
+  面の法線が流体側を向いているかを実際に調べて押し出し方向を決め、生成後に
+  「プリズム数 = 層数 × 壁面の面数」「メッシュ体積と CAD 体積の差がプリズム体積の半分未満」を検証する
+  （内側へ押し出されると体積がプリズム体積の 2 倍増えるため検出できる）。
+  条件を満たさなければジョブを失敗させ、境界層なしのメッシュへ黙って切り替えない。
+- **メッシュの鮮度**: 形状・姿勢・風洞・設定から入力ハッシュを作り、レポートに記録。現在の状態と一致しなければ「再生成が必要」。
+- **未対応**: STL パーツの体積メッシュ、半分モデル（対称面）、接地形状の境界層。
+  `snappyHexMesh` バックエンドは OpenFOAM が必要なため Stage 3 以降で検討する。
 
 ### Stage 3 — OpenFOAM 連携（設計）
 - `solver/wsl.py`: `wsl.exe -d <distro> -- bash -lc "..."` の起動、ディストリビューションと OpenFOAM の検出。

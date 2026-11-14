@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ljmcfd"
-version = "0.1.0"
+version = "0.2.0"
 description = "LJM CFD (Claude edition) - automotive aerodynamics CFD workbench for Windows 11"
 requires-python = ">=3.12,<3.13"
 dynamic = ["dependencies"]

@@ -9,3 +9,4 @@ gmsh>=4.13,<4.16
 numpy>=2.0
 scipy>=1.13
 pyqtgraph>=0.13.7
+pillow>=10

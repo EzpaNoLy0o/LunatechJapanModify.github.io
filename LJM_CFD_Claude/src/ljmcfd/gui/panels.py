@@ -544,7 +544,7 @@ class DisplayPanel(QWidget):
             result_form.addRow(text, value)
             self.result_labels[key] = value
         result_form.addRow(_label(
-            f"このビルドは Stage {IMPLEMENTED_STAGE} (CAD 読み込み・モデル操作) です。"
+            f"このビルドは Stage {IMPLEMENTED_STAGE} (メッシュ生成まで) です。"
             "CFD 解析は Stage 3 で実装されるため、結果は常に「未計算」と表示されます。", "dim", wrap=True))
         layout.addWidget(result_box)
         layout.addStretch(1)
