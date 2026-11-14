@@ -133,6 +133,20 @@ def make_compound(shapes) -> TopoDS_Compound:
     return compound
 
 
+def bake_location(shape: TopoDS_Shape) -> TopoDS_Shape:
+    """インスタンス配置 (TopLoc_Location) を形状そのものへ焼き込んだコピーを返す。
+
+    キャッシュした B-Rep を別のツール (Gmsh) へ渡すとき、配置の解釈が食い違う余地を
+    無くすため、座標へ反映して「配置なし」の形状にしておく。
+    """
+    if shape.Location().IsIdentity():
+        return shape
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
+
+    transform = shape.Location().Transformation()
+    return BRepBuilderAPI_Transform(shape.Located(TopLoc_Location()), transform, True).Shape()
+
+
 def write_brep(shape: TopoDS_Shape, path: str | Path) -> None:
     if not BRepTools.Write_s(shape, str(path)):
         raise JobError(f"BREP キャッシュを書き込めません: {path}")
@@ -224,7 +238,7 @@ def _read_step_xcaf(path: str, ctx: JobContext) -> list[OccPart]:
         shape = shape_tool.GetShape_s(target)
         if shape.IsNull():
             return
-        parts.append(OccPart(name, shape.Moved(location), color))
+        parts.append(OccPart(name, bake_location(shape.Moved(location)), color))
 
     free = _LabelSequence()
     shape_tool.GetFreeShapes(free)

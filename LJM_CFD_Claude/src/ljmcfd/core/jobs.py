@@ -27,6 +27,8 @@ PROTOCOL_PREFIX = "@@LJMJOB@@ "
 JOB_REGISTRY: dict[str, str] = {
     "cad-import": "ljmcfd.cad.import_job:import_cad_job",
     "cad-inspect": "ljmcfd.cad.inspect:inspect_part_job",
+    "frontal-area": "ljmcfd.tunnel.frontal_area:frontal_area_job",
+    "mesh-generate": "ljmcfd.mesh.gmsh_job:mesh_generate_job",
 }
 
 

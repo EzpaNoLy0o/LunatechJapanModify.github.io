@@ -280,3 +280,14 @@ def test_flat_stl_and_cached_bounds(tmp_path, cache_root):
     assert (b[1] - b[0], b[3] - b[2], b[5] - b[4]) == pytest.approx((0.0, 2.0, 1.0), abs=1e-6)
     part.unit = "m"
     assert assembly.world_bounds()[5] - assembly.world_bounds()[4] == pytest.approx(1000.0)
+
+
+def test_instance_location_is_baked_into_brep(instanced_step, cache_root):
+    """キャッシュした B-Rep は配置を座標へ焼き込んである (後段のメッシャーが配置を落とさないように)。"""
+    from ljmcfd.cad import occ_io
+
+    meta, _ = _import(instanced_step, cache_root)
+    rear = next(p for p in meta["parts"] if p["name"] == "Wheel_RL")
+    shape = occ_io.read_brep(Path(meta["cache_dir"]) / rear["brep"])
+    assert shape.Location().IsIdentity()
+    assert occ_io.shape_bounds(shape)[0] == pytest.approx(2600.0 - 300.0, abs=1e-3)

@@ -27,7 +27,7 @@ from ..core.jobs import JobContext, JobError
 from ..core.units import guess_unit_from_size
 
 #: キャッシュ形式を変えたら上げる (古いキャッシュは無視される)
-IMPORTER_VERSION = 2
+IMPORTER_VERSION = 3
 
 STEP_SUFFIXES = (".step", ".stp")
 IGES_SUFFIXES = (".iges", ".igs")
