@@ -167,7 +167,8 @@ def compute_quality(mesh: PolyMesh) -> dict:
         "max_openness": float(openness.max()),
         "boundary_closure": boundary_closure,
         "non_ortho_max": float(non_ortho.max(initial=0.0)),
-        "non_ortho_mean": float(non_ortho.mean()) if len(non_ortho) else 0.0,
+        # 平均は OpenFOAM の checkMesh と同じ定義 (余弦の平均から角度を求める) にしてある
+        "non_ortho_mean": float(np.degrees(np.arccos(np.clip(cosine.mean(), -1.0, 1.0)))) if len(cosine) else 0.0,
         "n_non_ortho_over_70": int((non_ortho > NON_ORTHO_WARN).sum()),
         "skewness_max": skew_all_max,
         "n_skewness_over_4": int((skew_internal > SKEWNESS_WARN).sum() + (skew_boundary > SKEWNESS_WARN).sum()),

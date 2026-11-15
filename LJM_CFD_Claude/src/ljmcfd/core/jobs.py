@@ -29,6 +29,8 @@ JOB_REGISTRY: dict[str, str] = {
     "cad-inspect": "ljmcfd.cad.inspect:inspect_part_job",
     "frontal-area": "ljmcfd.tunnel.frontal_area:frontal_area_job",
     "mesh-generate": "ljmcfd.mesh.gmsh_job:mesh_generate_job",
+    "solver-check-env": "ljmcfd.solver.environment:check_environment_job",
+    "solver-run": "ljmcfd.solver.run_job:solver_run_job",
 }
 
 
@@ -45,6 +47,9 @@ class JobContext:
     def log(self, message: str) -> None:  # pragma: no cover
         pass
 
+    def event(self, name: str, data: dict) -> None:  # pragma: no cover
+        """進捗以外の逐次データ (残差・荷重の履歴など) を送る。"""
+
 
 class RecordingContext(JobContext):
     """テスト用: 報告内容をリストに記録する。"""
@@ -52,12 +57,16 @@ class RecordingContext(JobContext):
     def __init__(self) -> None:
         self.progress_events: list[tuple[float, str]] = []
         self.logs: list[str] = []
+        self.events: list[tuple[str, dict]] = []
 
     def progress(self, fraction: float, message: str = "") -> None:
         self.progress_events.append((fraction, message))
 
     def log(self, message: str) -> None:
         self.logs.append(message)
+
+    def event(self, name: str, data: dict) -> None:
+        self.events.append((name, data))
 
 
 class StdoutContext(JobContext):
@@ -73,6 +82,9 @@ class StdoutContext(JobContext):
 
     def log(self, message: str) -> None:
         self._emit({"type": "log", "message": message})
+
+    def event(self, name: str, data: dict) -> None:
+        self._emit({"type": "event", "name": name, "data": data})
 
     def result(self, data: dict) -> None:
         self._emit({"type": "result", "data": data})
