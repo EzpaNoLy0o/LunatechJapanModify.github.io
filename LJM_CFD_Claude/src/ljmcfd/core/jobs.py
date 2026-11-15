@@ -126,6 +126,27 @@ def job_environment(base: dict | None = None) -> dict:
     return env
 
 
+def kill_process_tree(pid: int) -> None:
+    """プロセスと、その子孫をすべて強制終了する。"""
+    if pid <= 0:
+        return
+    if sys.platform == "win32":
+        import subprocess
+
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False,
+                       creationflags=subprocess.CREATE_NO_WINDOW)
+        return
+    import signal
+
+    try:
+        os.killpg(pid, signal.SIGKILL)       # ジョブは setsid 済みなので pid = プロセスグループ id
+    except (ProcessLookupError, PermissionError):
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+
 def resolve_job(name: str) -> Callable[[dict, JobContext], dict]:
     try:
         target = JOB_REGISTRY[name]
@@ -148,6 +169,13 @@ def parse_protocol_line(line: str) -> dict | None:
 
 def run_job_cli(name: str, args_path: str) -> int:
     """子プロセスのエントリポイント。終了コードを返す。"""
+    if hasattr(os, "setsid"):
+        # 自分を先頭とするプロセスグループを作る。GUI がジョブを強制終了するとき、
+        # ジョブが起動した子 (メッシャーやソルバー) もまとめて止められるようにするため。
+        try:
+            os.setsid()
+        except OSError:
+            pass
     ctx = StdoutContext()
     try:
         with open(args_path, "r", encoding="utf-8") as fh:

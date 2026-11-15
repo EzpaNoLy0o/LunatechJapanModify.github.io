@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
-from .. import IMPLEMENTED_STAGE
 from ..core.units import DISPLAY_UNITS, format_length, from_display, to_display
 from . import theme
 from .scene import Scene
@@ -472,7 +471,7 @@ class ModelPanel(QWidget):
 # ============================================================================ 右側: 表示設定・選択情報・計測・結果
 
 class DisplayPanel(QWidget):
-    """表示設定 / 選択情報 / 寸法計測 / 空力結果。"""
+    """表示設定 / 選択情報 / 寸法計測。"""
 
     def __init__(self, scene: Scene, viewport: Viewport, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -532,21 +531,6 @@ class DisplayPanel(QWidget):
         measure_layout.addWidget(self.measure_clear)
         layout.addWidget(measure_box)
 
-        # --- 空力結果 -----------------------------------------------------
-        result_box = QGroupBox("空力結果")
-        result_form = QFormLayout(result_box)
-        self.result_labels: dict[str, QLabel] = {}
-        for key, text in (
-            ("drag", "Drag [N]"), ("downforce", "Downforce [N]"), ("lift", "Lift [N]"),
-            ("side", "Side Force [N]"), ("cd", "Cd"), ("cl", "Cl"),
-        ):
-            value = _label(NOT_COMPUTED, "dim")
-            result_form.addRow(text, value)
-            self.result_labels[key] = value
-        result_form.addRow(_label(
-            f"このビルドは Stage {IMPLEMENTED_STAGE} (メッシュ生成まで) です。"
-            "CFD 解析は Stage 3 で実装されるため、結果は常に「未計算」と表示されます。", "dim", wrap=True))
-        layout.addWidget(result_box)
         layout.addStretch(1)
 
         self.unit_combo.currentTextChanged.connect(scene.set_display_unit)

@@ -11,6 +11,8 @@ from ..core.pose import Pose
 from ..core.project import PartRecord
 from ..mesh.request import analysis_parts, build_mesh_request
 from ..mesh.settings import MeshSettings
+from ..solver.request import solver_input_hash
+from ..solver.settings import SolverSettings
 from ..tunnel import spec as tunnel_spec
 from ..tunnel.spec import TunnelSpec
 
@@ -28,6 +30,8 @@ class Scene(QObject):
     tunnelChanged = Signal()            # 風洞・流れの条件の変更
     meshSettingsChanged = Signal()
     meshChanged = Signal()              # メッシュ (レポート) の生成・破棄
+    solverSettingsChanged = Signal()
+    solverChanged = Signal()            # 解析結果 (サマリー) の更新・破棄
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -38,6 +42,8 @@ class Scene(QObject):
         self.tunnel = TunnelSpec()
         self.mesh_settings = MeshSettings()
         self.mesh_report: dict | None = None    # 生成済みメッシュのレポート (無ければ None)
+        self.solver_settings = SolverSettings()
+        self.solver_summary: dict | None = None  # 解析結果のサマリー (未計算なら None)
 
     # ------------------------------------------------------------------ 参照
     @property
@@ -93,10 +99,14 @@ class Scene(QObject):
         self.tunnel = TunnelSpec()
         self.mesh_settings = MeshSettings()
         self.mesh_report = None
+        self.solver_settings = SolverSettings()
+        self.solver_summary = None
         self.cleared.emit()
         self.tunnelChanged.emit()
         self.meshSettingsChanged.emit()
         self.meshChanged.emit()
+        self.solverSettingsChanged.emit()
+        self.solverChanged.emit()
         self.selectionChanged.emit()
         self.faceSelectionChanged.emit()
         self.transformsChanged.emit()
@@ -278,3 +288,21 @@ class Scene(QObject):
             return "stale"
         current = self.mesh_request("")["input_hash"]
         return "current" if current == self.mesh_report.get("input_hash") else "stale"
+
+    # ------------------------------------------------------------------ 解析
+    def notify_solver_settings_changed(self) -> None:
+        self.solverSettingsChanged.emit()
+        self.modified.emit()
+
+    def set_solver_summary(self, summary: dict | None) -> None:
+        self.solver_summary = summary
+        self.solverChanged.emit()
+
+    def solver_state(self) -> str:
+        """解析結果の状態: "none" (未計算) / "current" (現在の設定の結果) / "stale" (設定変更後に未再計算)。"""
+        if self.solver_summary is None:
+            return "none"
+        if self.mesh_report is None or self.mesh_state() != "current":
+            return "stale"
+        current = solver_input_hash(self.mesh_report, self.tunnel, self.solver_settings)
+        return "current" if current == self.solver_summary.get("input_hash") else "stale"

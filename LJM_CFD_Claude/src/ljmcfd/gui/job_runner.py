@@ -15,7 +15,7 @@ from typing import Callable
 from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
 from ..core import paths
-from ..core.jobs import job_command, job_environment, parse_protocol_line
+from ..core.jobs import job_command, job_environment, kill_process_tree, parse_protocol_line
 
 logger = logging.getLogger("ljmcfd.jobs")
 
@@ -25,6 +25,7 @@ class Job(QObject):
 
     progress = Signal(float, str)
     log = Signal(str)
+    dataEvent = Signal(str, dict)   # 逐次データ (残差・荷重の履歴など): 名前, 内容
     succeeded = Signal(dict)
     failed = Signal(str, str)      # メッセージ, 詳細 (トレースバック等)
     finished = Signal()            # 成否にかかわらず最後に 1 回
@@ -61,6 +62,8 @@ class Job(QObject):
     def cancel(self) -> None:
         self._cancelled = True
         if self._process is not None and self._process.state() != QProcess.NotRunning:
+            # ジョブが起動した子プロセス (Gmsh・OpenFOAM・wsl.exe) も残さず止める
+            kill_process_tree(int(self._process.processId()))
             self._process.kill()
 
     def is_running(self) -> bool:
@@ -88,6 +91,8 @@ class Job(QObject):
             self.progress.emit(float(event.get("value", 0.0)), str(event.get("message", "")))
         elif kind == "log":
             self.log.emit(str(event.get("message", "")))
+        elif kind == "event":
+            self.dataEvent.emit(str(event.get("name", "")), event.get("data") or {})
         elif kind == "result":
             self._result = event.get("data") or {}
         elif kind == "error":
@@ -148,6 +153,7 @@ class JobManager(QObject):
         label: str = "",
         on_success: Callable[[dict], None] | None = None,
         on_failure: Callable[[str, str], None] | None = None,
+        on_event: Callable[[str, dict], None] | None = None,
     ) -> Job:
         job = Job(name, args, label, self)
         job.progress.connect(lambda value, msg, j=job: self.progress.emit(j.label, value, msg))
@@ -157,6 +163,8 @@ class JobManager(QObject):
             job.succeeded.connect(on_success)
         if on_failure is not None:
             job.failed.connect(on_failure)
+        if on_event is not None:
+            job.dataEvent.connect(on_event)
         job.finished.connect(lambda j=job: self._on_job_finished(j))
         self._queue.append(job)
         self._pump()

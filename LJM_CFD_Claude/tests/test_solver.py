@@ -78,6 +78,20 @@ def test_environment_commands_and_paths(tmp_path):
     assert default_environment().kind in (KIND_NATIVE, KIND_WSL)
 
 
+def test_wsl_messages_are_decoded():
+    from ljmcfd.solver.environment import decode_output, list_wsl_distributions
+
+    # WSL 内のコマンドの出力は UTF-8
+    assert decode_output("version=14\r\n解析\n".encode("utf-8")) == "version=14\n解析\n"
+    # wsl.exe 自身のメッセージは UTF-16LE
+    message = "指定された名前のディストリビューションはありません。\r\n"
+    assert decode_output(message.encode("utf-16-le")) == message.replace("\r\n", "\n")
+    english = "There is no distribution with the supplied name.\r\n"
+    assert decode_output(english.encode("utf-16-le")) == english.replace("\r\n", "\n")
+    assert decode_output(None) == "" and decode_output(b"") == ""
+    assert isinstance(list_wsl_distributions(), list)
+
+
 def test_missing_openfoam_is_reported(tmp_path):
     env = FoamEnvironment(kind=KIND_NATIVE, bashrc="/nonexistent/openfoam/etc/bashrc")
     with pytest.raises(JobError, match="OpenFOAM が見つかりません"):

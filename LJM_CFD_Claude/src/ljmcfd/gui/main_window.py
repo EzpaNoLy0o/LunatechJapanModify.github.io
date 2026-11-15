@@ -23,10 +23,17 @@ from ..core.project import PROJECT_FILE, Project, ProjectError, load_project, sa
 from ..mesh.gmsh_job import load_report
 from ..mesh.request import part_payloads
 from ..mesh.settings import MeshSettings
+from ..solver.case import STOP_FILE
+from ..solver.environment import default_environment
+from ..solver.request import build_solver_request
+from ..solver.results import HISTORY_FILE
+from ..solver.run_job import STATUS_FAILED, load_summary
+from ..solver.settings import SolverSettings
 from ..tunnel.spec import TunnelSpec
 from .analysis_panels import MeshDisplayPanel, MeshPanel, MeshQualityView, TunnelPanel
 from .job_runner import JobManager
 from .panels import DisplayPanel, InspectionTable, LogPanel, ModelPanel, PartTree, scrollable
+from .solver_panels import ConvergencePlot, ResultsPanel, SolverPanel
 from .scene import Scene
 from .viewport import MODE_FACE, MODE_MEASURE, MODE_PART, Viewport
 
@@ -51,6 +58,7 @@ class MainWindow(QMainWindow):
         self._restore_view: dict | None = None
         self._scratch_dir: Path | None = None     # 未保存プロジェクトの作業フォルダ
         self._mesh_job = None
+        self._solver_job = None
 
         self.setAcceptDrops(True)
         self.resize(1600, 960)
@@ -81,6 +89,8 @@ class MainWindow(QMainWindow):
         self.mesh_panel = MeshPanel(self.scene)
         self.left_tabs.addTab(scrollable(self.tunnel_panel), "風洞")
         self.left_tabs.addTab(scrollable(self.mesh_panel), "メッシュ")
+        self.solver_panel = SolverPanel(self.scene, self._load_environment())
+        self.left_tabs.addTab(scrollable(self.solver_panel), "解析")
         self.left_splitter = QSplitter(Qt.Vertical)
         self.left_splitter.addWidget(self._titled("モデル・パーツ", self.part_tree))
         self.left_splitter.addWidget(self.left_tabs)
@@ -88,9 +98,12 @@ class MainWindow(QMainWindow):
 
         # 右: 可視化設定・結果
         self.right_tabs = QTabWidget()
-        self.right_tabs.addTab(scrollable(self.display_panel), "表示・結果")
+        self.right_tabs.addTab(scrollable(self.display_panel), "表示")
         self.mesh_display = MeshDisplayPanel(self.scene, self.viewport)
         self.right_tabs.addTab(scrollable(self.mesh_display), "風洞・メッシュ")
+        self.results_panel = ResultsPanel(self.scene)
+        self.results_scroll = scrollable(self.results_panel)
+        self.right_tabs.addTab(self.results_scroll, "空力結果")
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.left_splitter)
@@ -107,6 +120,8 @@ class MainWindow(QMainWindow):
         self.bottom_tabs.addTab(self.inspection_table, "形状検査")
         self.mesh_quality = MeshQualityView(self.scene)
         self.bottom_tabs.addTab(self.mesh_quality, "メッシュ品質")
+        self.convergence_plot = ConvergencePlot()
+        self.bottom_tabs.addTab(self.convergence_plot, "残差・荷重")
 
         self.outer_splitter = QSplitter(Qt.Vertical)
         self.outer_splitter.addWidget(self.main_splitter)
@@ -242,6 +257,10 @@ class MainWindow(QMainWindow):
         self.tunnel_panel.generateRequested.connect(self.generate_tunnel)
         self.mesh_panel.generateRequested.connect(self.generate_mesh)
         self.mesh_panel.stopRequested.connect(self.stop_mesh)
+        self.solver_panel.startRequested.connect(self.run_solver)
+        self.solver_panel.stopRequested.connect(self.stop_solver)
+        self.solver_panel.checkEnvironmentRequested.connect(self.check_environment)
+        self.solver_panel.environmentEdited.connect(self._save_environment)
         self.scene.modified.connect(self._on_modified)
         self.jobs.progress.connect(self._on_job_progress)
         self.jobs.busyChanged.connect(self._on_busy_changed)
@@ -439,21 +458,31 @@ class MainWindow(QMainWindow):
     def mesh_dir(self) -> Path:
         return self.work_dir() / "mesh"
 
+    def results_dir(self) -> Path:
+        return self.work_dir() / "results"
+
+    def case_dir(self) -> Path:
+        return self.work_dir() / "case"
+
     def _move_results_into(self, project_dir: Path) -> None:
-        """保存先が変わるとき、生成済みメッシュを新しいプロジェクトフォルダへ引き継ぐ。"""
-        report = self.scene.mesh_report
-        if report is None:
-            return
-        source, target = Path(report["out_dir"]), project_dir / "mesh"
-        if source.resolve() == target.resolve():
+        """保存先が変わるとき、生成済みのメッシュ・ケース・解析結果を新しいプロジェクトフォルダへ引き継ぐ。"""
+        source_root = self.work_dir()
+        if source_root.resolve() == project_dir.resolve():
             return
         project_dir.mkdir(parents=True, exist_ok=True)
-        shutil.rmtree(target, ignore_errors=True)
-        shutil.copytree(source, target)
-        if self._scratch_dir is not None and self._scratch_dir in source.parents:
+        for name in ("mesh", "case", "results"):
+            source, target = source_root / name, project_dir / name
+            if not source.is_dir():
+                continue
+            shutil.rmtree(target, ignore_errors=True)
+            shutil.copytree(source, target)
+        if self._scratch_dir is not None:
             shutil.rmtree(self._scratch_dir, ignore_errors=True)
             self._scratch_dir = None
-        report["out_dir"] = str(target)
+        if self.scene.mesh_report is not None:
+            self.scene.mesh_report["out_dir"] = str(project_dir / "mesh")
+        if self.scene.solver_summary is not None:
+            self.scene.solver_summary["results_dir"] = str(project_dir / "results")
         self.viewport._mesh = None      # 読み込み元のパスが変わったので表示データを読み直させる
 
     def generate_mesh(self) -> bool:
@@ -510,6 +539,129 @@ class MainWindow(QMainWindow):
         if message != "キャンセルされました":
             QMessageBox.critical(self, "メッシュ生成失敗", message)
 
+    # ------------------------------------------------------------------ 解析 (OpenFOAM)
+    def _load_environment(self):
+        env = default_environment()
+        env.distro = str(self.settings.value("openfoam/distro", env.distro))
+        env.bashrc = str(self.settings.value("openfoam/bashrc", env.bashrc))
+        return env
+
+    def _save_environment(self) -> None:
+        env = self.solver_panel.environment()
+        self.settings.setValue("openfoam/distro", env.distro)
+        self.settings.setValue("openfoam/bashrc", env.bashrc)
+
+    def check_environment(self) -> None:
+        """OpenFOAM が使えるかを別プロセスで確認し、結果を解析タブに表示する。"""
+        self._save_environment()
+        self.solver_panel.env_status.setText("確認中…")
+
+        def on_success(info: dict) -> None:
+            self.solver_panel.show_environment(info)
+            logger.info("OpenFOAM %s を検出しました", info["version"])
+
+        self.jobs.submit(
+            "solver-check-env",
+            {"environment": self.solver_panel.environment().to_dict(), "work_dir": str(paths.temp_dir())},
+            label="OpenFOAM 環境の確認",
+            on_success=on_success,
+            on_failure=lambda message, _detail: self.solver_panel.show_environment(None, message),
+        )
+
+    def run_solver(self) -> bool:
+        """現在のメッシュと条件で CFD 解析を実行する (別プロセス。OpenFOAM は WSL / Linux 側で動く)。"""
+        if self._solver_job is not None:
+            return False
+        problems = []
+        state = self.scene.mesh_state()
+        if state == "none":
+            problems.append("メッシュが未生成です。先にメッシュを生成してください。")
+        elif state == "stale":
+            problems.append("メッシュが現在の形状・風洞・設定と一致しません。メッシュを再生成してください。")
+        elif self.scene.mesh_report["quality"]["summary"]["level"] == "error":
+            problems.append("メッシュ品質が「不良」のため解析できません。メッシュ設定を見直してください。")
+        problems += self.scene.solver_settings.validate()
+        if problems:
+            for text in problems:
+                logger.error("解析を開始できません: %s", text)
+            QMessageBox.warning(self, "解析を開始できません", "\n".join(problems))
+            return False
+        self._save_environment()
+        settings = self.scene.solver_settings
+        request = build_solver_request(self.scene.mesh_report, self.scene.tunnel, settings,
+                                       self.solver_panel.environment(), self.work_dir())
+        if not settings.continue_run:
+            self.convergence_plot.clear()
+        if self.scene.tunnel.effective_reference_area() is None:
+            logger.warning("基準面積が未設定のため、Cd・Cl は計算されません (風洞タブで風洞を生成してください)。")
+        logger.info("解析を開始します: %d 反復、風速 %.1f km/h%s", settings.iterations, self.scene.tunnel.flow.speed_kmh,
+                    " (前回の続きから)" if settings.continue_run else "")
+        self.solver_panel.set_running(True, "準備中…")
+        self.bottom_tabs.setCurrentWidget(self.convergence_plot)
+        self._solver_job = self.jobs.submit(
+            "solver-run", request, label="CFD 解析",
+            on_success=self._on_solver_done, on_failure=self._on_solver_failed, on_event=self._on_solver_event,
+        )
+        self._solver_job.progress.connect(lambda _value, message: self.solver_panel.set_progress_text(message))
+        return True
+
+    def stop_solver(self) -> None:
+        """解析の停止を要求する。OpenFOAM は現在の反復の結果を書き出してから終了する。"""
+        if self._solver_job is None:
+            return
+        case_dir = self.case_dir()
+        try:
+            case_dir.mkdir(parents=True, exist_ok=True)
+            (case_dir / STOP_FILE).write_text("stop requested by LJM CFD\n", encoding="ascii")
+        except OSError as exc:
+            logger.error("停止要求を書き込めません: %s", exc)
+            return
+        logger.warning("解析の停止を要求しました。現在の反復の結果を保存して終了します。")
+        self.solver_panel.set_progress_text("停止処理中…")
+
+    def _on_solver_event(self, name: str, data: dict) -> None:
+        if name == "residuals":
+            self.convergence_plot.append_residuals(data)
+        elif name == "forces":
+            self.convergence_plot.append_forces(data)
+
+    def _show_history(self, summary: dict | None) -> None:
+        self.convergence_plot.clear()
+        if summary and summary.get("files", {}).get("history"):
+            history = Path(summary["results_dir"]) / HISTORY_FILE
+            if history.is_file():
+                self.convergence_plot.load_history(history)
+
+    def _on_solver_done(self, summary: dict) -> None:
+        self._solver_job = None
+        self.scene.set_solver_summary(summary)
+        self._show_history(summary)
+        convergence = summary["convergence"]
+        if summary["status"] == STATUS_FAILED:
+            self.solver_panel.set_running(False, "計算失敗")
+            logger.error("解析に失敗しました: %s", (summary.get("error") or "").strip()[:800])
+            QMessageBox.critical(self, "計算失敗", "ソルバーが異常終了しました。詳細はログを確認してください。\n\n"
+                                 + "\n".join((summary.get("error") or "").strip().splitlines()[:8]))
+        else:
+            forces = summary["forces"]
+            self.solver_panel.set_running(False, f"{summary['status_label']}\n収束判定: {convergence['label']}")
+            log = logger.info if convergence["level"] in ("converged", "mostly_converged") else logger.warning
+            log("解析結果: Drag %.2f N / Downforce %.2f N / 収束判定: %s — %s",
+                forces["drag"], forces["downforce"], convergence["label"], convergence["message"])
+            for note in summary.get("notes") or []:
+                logger.warning("精度に関する注意: %s", note)
+            self.statusBar().showMessage(f"解析完了: {convergence['label']}", 10000)
+        self.right_tabs.setCurrentWidget(self.results_scroll)
+        self._on_modified()
+
+    def _on_solver_failed(self, message: str, detail: str) -> None:
+        self._solver_job = None
+        self.solver_panel.set_running(False, "解析を開始できませんでした")
+        if detail:
+            logger.error("詳細:\n%s", detail)
+        if message != "キャンセルされました":
+            QMessageBox.critical(self, "解析を開始できません", message)
+
     # ------------------------------------------------------------------ プロジェクト
     def _confirm_discard(self) -> bool:
         if not self._modified:
@@ -532,6 +684,7 @@ class MainWindow(QMainWindow):
         self.project = Project()
         self.project_dir = None
         self._scratch_dir = None
+        self.convergence_plot.clear()
         self._set_clean()
 
     def _projects_root(self) -> Path:
@@ -563,6 +716,7 @@ class MainWindow(QMainWindow):
         project.sections["mesh"] = {
             "settings": self.scene.mesh_settings.to_dict(), "display": self.mesh_display.settings(),
         }
+        project.sections["solver"] = {"settings": self.scene.solver_settings.to_dict()}
         try:
             self._move_results_into(project_dir)
             file = save_project(project, project_dir)
@@ -602,8 +756,11 @@ class MainWindow(QMainWindow):
         self.scene.set_display_unit(project.display_unit)
         self.scene.tunnel = TunnelSpec.from_dict(project.sections.get("tunnel"))
         self.scene.mesh_settings = MeshSettings.from_dict(project.sections.get("mesh", {}).get("settings"))
+        self.scene.solver_settings = SolverSettings.from_dict(project.sections.get("solver", {}).get("settings"))
         self.scene.tunnelChanged.emit()
         self.scene.meshSettingsChanged.emit()
+        self.scene.solverSettingsChanged.emit()
+        self.convergence_plot.clear()
         self._scratch_dir = None
         self._restore_view = dict(project.view)
         self._restore_problems = []
@@ -650,6 +807,10 @@ class MainWindow(QMainWindow):
         # 保存済みメッシュがあれば再読み込みする (再生成はしない)
         self.scene.set_mesh_report(load_report(self.mesh_dir()) if self.project_dir else None)
         self.mesh_display.apply_settings(self.project.sections.get("mesh", {}).get("display", {}))
+        # 保存済みの解析結果があれば再読み込みする (再計算はしない)
+        summary = load_summary(self.results_dir()) if self.project_dir else None
+        self.scene.set_solver_summary(summary)
+        self._show_history(summary)
         self.scene.tunnelChanged.emit()
         if self._restore_view:
             self.display_panel.apply_view_settings(self._restore_view)
@@ -686,8 +847,8 @@ class MainWindow(QMainWindow):
 
         lines = [
             f"<b>{APP_NAME} {APP_EDITION}</b> v{__version__}",
-            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD 読み込み・モデル操作・仮想風洞・メッシュ生成)",
-            "未実装: OpenFOAM 解析 (Stage 3)、結果可視化 (Stage 4-5)",
+            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD 読み込み・仮想風洞・メッシュ生成・OpenFOAM 解析)",
+            "未実装: 流れ場の可視化 (Stage 4)、断面・流線・粒子のスライダー操作 (Stage 5)",
             "",
             f"Python {platform.python_version()} / PySide6 {PySide6.__version__} / "
             f"VTK {vtk.vtkVersion.GetVTKVersion()} / PyVista {pv.__version__}",

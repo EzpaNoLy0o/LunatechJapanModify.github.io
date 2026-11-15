@@ -3,8 +3,8 @@
 Windows 11 で動作する自動車専用 CFD ワークベンチの全体設計です。
 Stage 1〜6 を通して変わらない骨格と、各ステージで追加するモジュールを定めます。
 
-- **実装済み**: Stage 1（GUI・3D 表示・CAD 読み込み・モデル操作・形状検査）、Stage 2（仮想風洞・メッシュ生成・品質評価・polyMesh 変換）
-- **未実装**: Stage 3〜6（本書の該当節は「設計」であり、動作するコードはまだありません）
+- **実装済み**: Stage 1（GUI・3D 表示・CAD 読み込み・モデル操作・形状検査）、Stage 2（仮想風洞・メッシュ生成・品質評価・polyMesh 変換）、Stage 3（OpenFOAM 連携・解析・荷重・収束判定）
+- **未実装**: Stage 4〜6（本書の該当節は「設計」であり、動作するコードはまだありません）
 
 ---
 
@@ -32,12 +32,13 @@ Stage 1〜6 を通して変わらない骨格と、各ステージで追加す�
 │   ├ cad-inspect  形状検査                     [Stage 1 実装済] │
 │   ├ frontal-area   前面投影面積               [Stage 2 実装済] │
 │   ├ mesh-generate  Gmsh → polyMesh            [Stage 2 実装済] │
-│   └ solver-run   wsl.exe 経由で OpenFOAM を監視 [Stage 3]     │
+│   ├ solver-check-env  OpenFOAM の検出         [Stage 3 実装済] │
+│   └ solver-run   OpenFOAM の実行と監視        [Stage 3 実装済] │
 │                            │ wsl.exe -d Ubuntu-24.04 -- bash │
 └────────────────────────────┼───────────────────────────────┘
                              ▼
 ┌──────────────── WSL2 / Ubuntu 24.04 ───────────────────────┐
-│  OpenFOAM Foundation 14（foamRun / foamToVTK）  [Stage 3]   │
+│  OpenFOAM Foundation 14（foamRun / foamToVTK）              │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -49,6 +50,7 @@ Stage 1〜6 を通して変わらない骨格と、各ステージで追加す�
 |---|---|
 | `progress` | `value`（0〜1）と `message` |
 | `log` | ログ 1 行 |
+| `event` | 逐次データ（残差・荷重の履歴など）。`name` と `data` |
 | `result` | 成功時の結果（最後に 1 回） |
 | `error` | 失敗時のメッセージと詳細 |
 
@@ -96,7 +98,14 @@ C:\LJM_CFD_Claude\                  ← 設置先（既存の LJM CFD とは別�
 │  │  ├ gmsh_job.py                 Gmsh による生成ジョブ
 │  │  ├ polymesh.py                 OpenFOAM polyMesh の組み立て・書き出し
 │  │  └ quality.py                  非直交性・歪度などの品質評価
-│  ├ solver\      [Stage 3]         ケース生成・WSL 実行・残差／荷重の解析
+│  ├ solver\                        OpenFOAM 連携
+│  │  ├ environment.py              実行環境 (WSL / ネイティブ)・スクリプト実行
+│  │  ├ case.py                     ケース生成 (辞書・境界条件)
+│  │  ├ monitor.py                  出力ファイルの解析・逐次読み取り
+│  │  ├ convergence.py              収束判定
+│  │  ├ results.py                  荷重・係数の集計、VTK の整理
+│  │  ├ request.py  settings.py     ジョブ引数・設定
+│  │  └ run_job.py                  解析ジョブ本体
 │  └ post\        [Stage 4-5]       結果読み込み・断面・流線・粒子アニメーション
 ├ tests\
 ├ workspace\                        実行時に生成（キャッシュ・ログ・設定）※Git 管理外
@@ -195,16 +204,34 @@ CAD ファイル ─(cad-import ジョブ)→ workspace\cache\cad\<key>\
 - **未対応**: STL パーツの体積メッシュ、半分モデル（対称面）、接地形状の境界層。
   `snappyHexMesh` バックエンドは OpenFOAM が必要なため Stage 3 以降で検討する。
 
-### Stage 3 — OpenFOAM 連携（設計）
-- `solver/wsl.py`: `wsl.exe -d <distro> -- bash -lc "..."` の起動、ディストリビューションと OpenFOAM の検出。
-  ケースは WSL 側の ext4（`~/ljmcfd_runs/…`）で実行し結果だけを Windows 側へ戻す方式と、`/mnt/c` 直接実行方式を比較して決定。
-- `solver/case_builder.py`: 定常・非圧縮 RANS、k-ω SST。Foundation 版のモジュラーソルバー（`foamRun` + `incompressibleFluid`）を想定。
-  **辞書の正確な書式は実機の OpenFOAM 14 で確認してから確定する**（本書の時点では未検証）。
-  安定化: 有界な 2 次風上、勾配リミッタ、控えめな緩和係数、初期数十反復の 1 次精度立ち上げ。
-- `solver/monitor.py`: 残差・`forces` / `forceCoeffs` の履歴を逐次解析して GUI へ送る。停止要求にも対応。
-- `solver/convergence.py`: 「計算完了」と「工学的に収束」を別判定。
-  残差の低下量、**直近区間の荷重変動幅**、質量収支（流入出の差）で評価し、満たさなければ「未収束」と表示。
-- 荷重: 圧力成分と粘性成分を分けて取得。Cd・Cl は `0.5·ρ·U²·A_ref` で無次元化し、基準面積は GUI で確認・変更可能。
+### Stage 3 — 実装済み
+
+- **実行環境** (`solver/environment.py`): Windows では `wsl.exe -d <distro> -- bash <script>`、Linux では `bash <script>`。
+  コマンドは必ず「ケースフォルダに書いた LF 改行のシェルスクリプトを実行する」形にする。
+  Windows → wsl.exe → bash と引数を渡す途中で引用符や `$` が壊れるのを避けるため。
+  ケースは `/mnt/c/...`（プロジェクトフォルダ）で直接実行するので、結果のコピーは不要。
+  `wsl.exe` 自身のメッセージは UTF-16LE なので、UTF-8 として読めない場合は UTF-16LE として読む。
+- **ケース生成** (`solver/case.py`): OpenFOAM 14 付属チュートリアル（`incompressibleFluid/drivaerFastback`）の書式に合わせ、実機で確認済み。
+  `foamRun` + `incompressibleFluid`、k-ω SST、`steadyState`。
+  対流 `bounded Gauss linearUpwind limited`、勾配 `cellLimited Gauss linear 1`、拡散 `Gauss linear limited corrected 0.5`。
+  壁面は `nutUSpaldingWallFunction`（全 y+ 域で有効）。
+- **実行手順** (`solver/run_job.py`): `checkMesh` → `renumberMesh` → `potentialFoam` → （`decomposePar`）→ `foamRun` →（`reconstructPar`）→ `foamToVTK`。
+  - `renumberMesh`: Gmsh の並列メッシャーはセルの並びが空間的にばらばらで、行列の帯幅が非常に大きい（34 万セルで 337,158）。
+    並べ替えると 7,766 になり、ソルバーが約 3 割速くなる（実測 1.25 → 0.85 秒 / 反復）。
+- **監視**: 実行中に `postProcessing/` の残差・荷重ファイルを追記分だけ読み、`event` として GUI へ送る。
+- **停止**: `stopAtFile` function object を使う。GUI がケースフォルダに `stop` ファイルを置くと、
+  OpenFOAM がその反復の結果を書き出して終了する（途中結果として読める）。プロセス間通信は不要。
+  アプリ終了時などの強制終了では、ジョブとその子プロセスをまとめて止める（POSIX はプロセスグループ、Windows は `taskkill /T`）。
+- **続きから**: `startFrom latestTime` と `endTime` の更新。荷重・残差の履歴は開始時刻ごとのフォルダに分かれるので、読み込み時につなぐ。
+- **収束判定** (`solver/convergence.py`): 「計算完了」と別に、荷重の安定（変動幅と前半・後半の差）、最終残差、質量収支で判定する。
+  しきい値は同ファイルの定数と README に記載。残差が打ち切り基準に達して終了した場合も、それだけでは「収束」としない。
+- **結果** (`solver/results.py`): 荷重は直近区間の平均。圧力成分と粘性成分を分けて保持。
+  係数は基準面積がある場合のみ計算し、GUI は「現在の」基準面積で換算し直す。パーツ別の荷重、実測 y+、場の範囲、精度の注意書きを付ける。
+- **失敗時**: ソルバーの異常終了・発散は `status = failed` として記録し、荷重の値は入れない。GUI は「計算失敗」と表示する。
+- **結果の鮮度**: メッシュのハッシュ・流れの条件・地面の扱い・ソルバー設定から入力ハッシュを作る（基準面積と並列数は含めない）。
+- **検証**: OpenFOAM 14 の `checkMesh` が自前の `polyMesh` を「Mesh OK」と判定し、非直交性・歪度・体積の値が自前の品質評価と一致する（自動テストで確認）。
+  Ahmed ボディ（粗い四面体・境界層なし）で Cd = 0.352（文献の実験値 0.285）。
+- **未確認**: Windows + WSL2 での実行（`wsl.exe` 経由の起動、`/mnt/c` 上の実行速度、WSL 内の非 root ユーザーでの `mpirun`）。
 
 ### Stage 4 — 結果可視化（設計）
 - `post/result_set.py`: VTK 結果の読み込みと派生量（|U|、Cp、渦度、Q 値）。

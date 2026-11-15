@@ -133,8 +133,10 @@ class FoamEnvironment:
         if code != 0 or "version" not in values:
             detail = output.strip()[-600:]
             if self.kind == KIND_WSL:
+                available = list_wsl_distributions()
+                hint = f"\nインストール済みのディストリビューション: {'、'.join(available)}" if available else ""
                 raise JobError(
-                    f"{where}を起動できません。ディストリビューション名と WSL2 の状態を確認してください。\n{detail}"
+                    f"{where}を起動できません。ディストリビューション名と WSL2 の状態を確認してください。{hint}\n{detail}"
                 )
             raise JobError(f"OpenFOAM 環境を起動できません。\n{detail}")
         if not values.get("foamRun"):
@@ -159,7 +161,37 @@ class FoamEnvironment:
 
 
 def decode_output(data: bytes | None) -> str:
-    return (data or b"").decode("utf-8", "replace").replace("\r\n", "\n")
+    """プロセスの出力を文字列にする。
+
+    WSL 内のコマンドは UTF-8 だが、``wsl.exe`` 自身のメッセージ (ディストリビューションが無い等) は
+    UTF-16LE で出力される。まず UTF-8 として厳密に読み、読めない場合や NUL 文字を含む場合
+    (英語の UTF-16 は UTF-8 としても「読めて」しまう) は UTF-16LE として読む。
+    """
+    data = data or b""
+    try:
+        text = data.decode("utf-8")
+        if "\x00" not in text:
+            return text.replace("\r\n", "\n")
+    except UnicodeDecodeError:
+        pass
+    if len(data) % 2 == 0:
+        try:
+            return data.decode("utf-16-le").replace("\r\n", "\n")
+        except UnicodeDecodeError:
+            pass
+    return data.decode("utf-8", "replace").replace("\r\n", "\n")
+
+
+def list_wsl_distributions() -> list[str]:
+    """インストール済みの WSL ディストリビューション名。取得できなければ空リスト。"""
+    if sys.platform != "win32":
+        return []
+    try:
+        result = subprocess.run(["wsl.exe", "-l", "-q"], capture_output=True, timeout=30,
+                                creationflags=subprocess.CREATE_NO_WINDOW)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    return [line.strip() for line in decode_output(result.stdout).splitlines() if line.strip()]
 
 
 def default_environment() -> FoamEnvironment:
