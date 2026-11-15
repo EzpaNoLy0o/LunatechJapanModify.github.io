@@ -106,6 +106,20 @@ def _add_derived(dataset, rho: float, speed: float) -> None:
             data["vorticity_mag"] = np.linalg.norm(np.asarray(data["vorticity"]), axis=1)
 
 
+def _save_uncompressed(dataset, path: Path) -> None:
+    """VTK XML 形式 (バイナリ・無圧縮) で保存する。"""
+    import vtk
+
+    writer = vtk.vtkXMLUnstructuredGridWriter() if dataset.IsA("vtkUnstructuredGrid") else vtk.vtkXMLPolyDataWriter()
+    writer.SetFileName(str(path))
+    writer.SetInputData(dataset)
+    writer.SetDataModeToAppended()
+    writer.EncodeAppendedDataOff()
+    writer.SetCompressorTypeToNone()
+    if not writer.Write():
+        raise JobError(f"結果ファイルを書き込めません: {path}")
+
+
 def package_fields(case_dir: str | Path, out_dir: str | Path, patches: list[dict], rho: float, speed: float) -> dict:
     """foamToVTK の出力を読み、派生量を加えて可視化用ファイルにまとめる。
 
@@ -120,7 +134,12 @@ def package_fields(case_dir: str | Path, out_dir: str | Path, patches: list[dict
         raise JobError("VTK への変換結果が見つかりません (foamToVTK の出力がありません)")
     volume = pv.read(volumes[-1])
     _add_derived(volume, rho, speed)
-    volume.save(out_dir / FIELDS_FILE, binary=True)
+    cells = {name: np.asarray(volume.cell_data[name]) for name in ("Umag", "pressure", "Cp") if name in volume.cell_data}
+    field_names = sorted(volume.point_data.keys())
+    # 可視化では節点値 (滑らかに補間できる) だけを使う。セル値を落として無圧縮で書くと、
+    # ファイルの読み込みが速くなり GUI の待ち時間が短くなる。
+    volume.cell_data.clear()
+    _save_uncompressed(volume, out_dir / FIELDS_FILE)
 
     surface_dir = out_dir / SURFACE_DIR
     surface_dir.mkdir(parents=True, exist_ok=True)
@@ -134,12 +153,11 @@ def package_fields(case_dir: str | Path, out_dir: str | Path, patches: list[dict
             continue
         surface = pv.read(files[-1])
         _add_derived(surface, rho, speed)
-        surface.save(surface_dir / f"{patch['name']}.vtp", binary=True)
+        _save_uncompressed(surface, surface_dir / f"{patch['name']}.vtp")
         surfaces[patch["name"]] = f"{SURFACE_DIR}/{patch['name']}.vtp"
         if patch.get("kind") == "part" and "pressure" in surface.cell_data and surface.n_cells:
             wall_pressure.append(np.asarray(surface.cell_data["pressure"]))
 
-    cells = volume.cell_data
     ranges = {
         "speed_max": float(np.max(cells["Umag"])) if "Umag" in cells else None,
         "pressure_min": float(np.min(cells["pressure"])) if "pressure" in cells else None,
@@ -152,5 +170,5 @@ def package_fields(case_dir: str | Path, out_dir: str | Path, patches: list[dict
     return {
         "files": {"fields": FIELDS_FILE, "surfaces": surfaces},
         "ranges": ranges,
-        "fields": sorted(volume.cell_data.keys()),
+        "fields": field_names,
     }

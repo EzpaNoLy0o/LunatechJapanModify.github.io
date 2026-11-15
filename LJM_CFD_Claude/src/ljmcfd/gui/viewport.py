@@ -51,6 +51,7 @@ class Viewport(QWidget):
     partClicked = Signal(str, int, bool)     # part id, face id, Ctrl 押下
     backgroundClicked = Signal()
     measureChanged = Signal(object)          # dict (p1, p2, distance, delta) または None
+    themeChanged = Signal()                  # 背景テーマが変わった (結果表示の配色を合わせるため)
 
     def __init__(self, scene: Scene, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -73,6 +74,7 @@ class Viewport(QWidget):
         self.show_tunnel = True
         self.show_mesh_surface = False
         self.show_mesh_ground = False
+        self.cad_hidden = False                 # 解析結果の表面分布を表示中は CAD を隠す
         self._mesh: dict | None = None          # 読み込んだメッシュ (境界面・体積セル・セルごとの座標範囲)
         self._section: tuple[bool, str, float] = (False, "y", 0.0)
         self._actors: dict[str, dict] = {}
@@ -140,6 +142,7 @@ class Viewport(QWidget):
             raise ValueError(f"未知の背景テーマ: {name}")
         self.theme_name = name
         self._apply_theme()
+        self.themeChanged.emit()
 
     def set_model_opacity(self, opacity: float) -> None:
         self.model_opacity = float(np.clip(opacity, 0.05, 1.0))
@@ -284,7 +287,16 @@ class Viewport(QWidget):
 
     def _cad_shown(self, part: Part) -> bool:
         """CAD 形状を描くか。メッシュ表面の表示中は、重なって見づらいので CAD 側を隠す。"""
-        return part.visible and not self.show_mesh_surface
+        return part.visible and not self.show_mesh_surface and not self.cad_hidden
+
+    def set_cad_hidden(self, hidden: bool) -> None:
+        """解析結果の表面分布と重ならないよう、CAD 形状の表示を一時的に止める。"""
+        if self.cad_hidden == bool(hidden):
+            return
+        self.cad_hidden = bool(hidden)
+        for part_id in self._actors:
+            self._apply_part_visibility(part_id)
+        self.request_render()
 
     def _apply_part_visibility(self, part_id: str) -> None:
         entry = self._actors[part_id]

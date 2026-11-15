@@ -33,6 +33,8 @@ from ..tunnel.spec import TunnelSpec
 from .analysis_panels import MeshDisplayPanel, MeshPanel, MeshQualityView, TunnelPanel
 from .job_runner import JobManager
 from .panels import DisplayPanel, InspectionTable, LogPanel, ModelPanel, PartTree, scrollable
+from .post_panel import PostPanel
+from .post_view import PostSettings, PostView
 from .solver_panels import ConvergencePlot, ResultsPanel, SolverPanel
 from .scene import Scene
 from .viewport import MODE_FACE, MODE_MEASURE, MODE_PART, Viewport
@@ -104,6 +106,10 @@ class MainWindow(QMainWindow):
         self.results_panel = ResultsPanel(self.scene)
         self.results_scroll = scrollable(self.results_panel)
         self.right_tabs.addTab(self.results_scroll, "空力結果")
+        self.post_view = PostView(self.scene, self.viewport, self)
+        self.post_panel = PostPanel(self.scene, self.post_view)
+        self.post_scroll = scrollable(self.post_panel)
+        self.right_tabs.addTab(self.post_scroll, "可視化")
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.left_splitter)
@@ -483,6 +489,7 @@ class MainWindow(QMainWindow):
             self.scene.mesh_report["out_dir"] = str(project_dir / "mesh")
         if self.scene.solver_summary is not None:
             self.scene.solver_summary["results_dir"] = str(project_dir / "results")
+            self.post_view.reload()     # 結果ファイルの場所が変わったので読み直す (表示設定はそのまま)
         self.viewport._mesh = None      # 読み込み元のパスが変わったので表示データを読み直させる
 
     def generate_mesh(self) -> bool:
@@ -717,6 +724,7 @@ class MainWindow(QMainWindow):
             "settings": self.scene.mesh_settings.to_dict(), "display": self.mesh_display.settings(),
         }
         project.sections["solver"] = {"settings": self.scene.solver_settings.to_dict()}
+        project.sections["post"] = self.post_view.settings.to_dict()
         try:
             self._move_results_into(project_dir)
             file = save_project(project, project_dir)
@@ -811,6 +819,7 @@ class MainWindow(QMainWindow):
         summary = load_summary(self.results_dir()) if self.project_dir else None
         self.scene.set_solver_summary(summary)
         self._show_history(summary)
+        self.post_view.apply_settings(PostSettings.from_dict(self.project.sections.get("post")))
         self.scene.tunnelChanged.emit()
         if self._restore_view:
             self.display_panel.apply_view_settings(self._restore_view)
@@ -847,8 +856,8 @@ class MainWindow(QMainWindow):
 
         lines = [
             f"<b>{APP_NAME} {APP_EDITION}</b> v{__version__}",
-            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD 読み込み・仮想風洞・メッシュ生成・OpenFOAM 解析)",
-            "未実装: 流れ場の可視化 (Stage 4)、断面・流線・粒子のスライダー操作 (Stage 5)",
+            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD・風洞・メッシュ・OpenFOAM 解析・流れ場の可視化)",
+            "未実装: 下部スライダーによる断面・流線の操作と粒子アニメーション (Stage 5)、配布パッケージ (Stage 6)",
             "",
             f"Python {platform.python_version()} / PySide6 {PySide6.__version__} / "
             f"VTK {vtk.vtkVersion.GetVTKVersion()} / PyVista {pv.__version__}",

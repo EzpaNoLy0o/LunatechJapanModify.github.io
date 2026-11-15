@@ -450,10 +450,11 @@ def test_real_analysis_outputs_and_live_events(solved):
     assert history["drag"][-1] == pytest.approx(summary["forces"]["drag"], rel=0.05)
     fields = pv.read(results / summary["files"]["fields"])
     assert fields.n_cells == solved["report"]["quality"]["n_cells"]
-    assert {"U", "p", "k", "omega", "nut", "Umag", "Cp", "pressure", "vorticity", "vorticity_mag", "Q"} <= set(fields.cell_data.keys())
+    assert {"U", "p", "k", "omega", "nut", "Umag", "Cp", "pressure", "vorticity", "vorticity_mag", "Q"} <= set(fields.point_data.keys())
+    assert not fields.cell_data.keys()                           # 可視化用ファイルは節点値のみ (読み込みを軽くする)
     assert set(summary["files"]["surfaces"]) == {"ground", "box_mm"}
     body = pv.read(results / summary["files"]["surfaces"]["box_mm"])
-    assert body.n_cells > 0 and {"pressure", "Cp", "wallShearStress", "yPlus"} <= set(body.cell_data.keys())
+    assert body.n_cells > 0 and {"pressure", "Cp", "wallShearStress", "yPlus"} <= set(body.point_data.keys())
     # 実行中に残差・荷重が逐次送られ、進捗が反復数で報告される (GUI のグラフ更新に使う)
     names = [name for name, _ in ctx.events]
     assert "residuals" in names and "forces" in names
