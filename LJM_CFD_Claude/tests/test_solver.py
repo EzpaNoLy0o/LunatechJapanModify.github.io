@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import threading
 from pathlib import Path
 
@@ -73,7 +74,7 @@ def test_environment_commands_and_paths(tmp_path):
     assert b"\r" not in raw                                   # Windows で書いても LF のみ (bash が壊れない)
     text = raw.decode()
     assert text.startswith("#!/bin/bash\n") and "source /opt/openfoam14/etc/bashrc" in text
-    assert f"cd {tmp_path}" in text and text.rstrip().endswith("checkMesh > log 2>&1")
+    assert native.path(tmp_path) in text and text.rstrip().endswith("checkMesh > log 2>&1")
     assert FoamEnvironment.from_dict(wsl.to_dict()) == wsl
     assert default_environment().kind in (KIND_NATIVE, KIND_WSL)
 
@@ -92,6 +93,7 @@ def test_wsl_messages_are_decoded():
     assert isinstance(list_wsl_distributions(), list)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows の bash は WSL の bash になるため、ネイティブ実行の確認は Linux で行う")
 def test_missing_openfoam_is_reported(tmp_path):
     env = FoamEnvironment(kind=KIND_NATIVE, bashrc="/nonexistent/openfoam/etc/bashrc")
     with pytest.raises(JobError, match="OpenFOAM が見つかりません"):
@@ -250,6 +252,17 @@ def test_file_tail_reads_only_complete_new_lines(tmp_path):
     with open(path, "a") as fh:
         fh.write("b\n3 c\n")
     assert tail.read_new_lines() == ["2 bb", "3 c"]
+
+
+def test_file_tail_strips_windows_line_endings(tmp_path):
+    """Windows でテキストとして書かれたログ (CRLF) でも、行末の \\r を含めない。"""
+    path = tmp_path / "forces.dat"
+    path.write_bytes(b"# header\r\n1 a\r\n2 b")
+    tail = monitor.FileTail(path)
+    assert tail.read_new_lines() == ["# header", "1 a"]
+    with open(path, "ab") as fh:
+        fh.write(b"b\r\n")
+    assert tail.read_new_lines() == ["2 bb"]
 
 
 # ----------------------------------------------------------------------------- 収束判定

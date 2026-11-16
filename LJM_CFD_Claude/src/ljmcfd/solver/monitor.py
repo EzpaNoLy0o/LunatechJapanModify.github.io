@@ -205,4 +205,5 @@ class FileTail:
         text = self._pending + chunk.decode("utf-8", "replace")
         lines = text.split("\n")
         self._pending = lines.pop()       # 書きかけの最終行は次回へ持ち越す
-        return lines
+        # Windows でテキストとして書かれたファイルは改行が CRLF になるので、行末の \r を取り除く
+        return [line[:-1] if line.endswith("\r") else line for line in lines]

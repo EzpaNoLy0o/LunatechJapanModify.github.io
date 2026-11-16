@@ -11,6 +11,7 @@ import sys
 
 import numpy as np
 import pytest
+from PySide6.QtWidgets import QWidget
 
 pytestmark = pytest.mark.gui
 
@@ -92,10 +93,16 @@ def test_bar_does_not_squeeze_the_side_panels(qtbot, window):
     assert window.main_splitter.sizes() == before and bar.notice.isVisible()
     assert bar.minimumSizeHint().width() <= before[1]           # 幅 1400 px のウィンドウでも中央に収まる
     assert bar.width() == window.viewport.width()
-    # どの部品も切れずに表示されている
+    # どの部品も切れずに表示されている (失敗時は、潰れた部品と寸法を表示する)
+    squeezed = []
+    for widget in bar.findChildren(QWidget):
+        if widget.isVisible() and widget.width() < widget.minimumSizeHint().width():
+            squeezed.append(f"{type(widget).__name__}({widget.objectName() or widget.text()!r}): "
+                            f"幅 {widget.width()} < 最小 {widget.minimumSizeHint().width()}")
+    assert not squeezed, f"バーの部品が潰れています (バー幅 {bar.width()}、ビュー幅 {window.viewport.width()}): {squeezed}"
     for widget in (bar.slice_position, bar.seed_position, bar.time_label, bar.export_button, bar.stop_button, bar.loop_check):
         right = widget.mapTo(bar, widget.rect().bottomRight()).x()
-        assert widget.isVisible() and widget.width() >= widget.minimumSizeHint().width() and right <= bar.width()
+        assert widget.isVisible() and right <= bar.width(), widget.objectName() or widget.text()
     assert window.viewport.height() > 350                       # 3D ビューの高さも十分に残る
 
 
@@ -420,7 +427,8 @@ def test_export_animation_gif_and_png_sequence(window, tmp_path):
         assert gif.n_frames == 6 and gif.info.get("loop") == 0
         assert gif.info["duration"] == pytest.approx(1000 * BASE_LOOP_SECONDS / 6, abs=11)
         full = window.viewport.capture_frame().shape
-        assert gif.size == (int(full[1] * 0.4), int(full[0] * 0.4))
+        # 撮影のたびに 3D ビューの高さが 1〜2 px 変わることがあるので、許容差で比べる
+        assert abs(gif.size[0] - full[1] * 0.4) <= 2 and abs(gif.size[1] - full[0] * 0.4) <= 2
         frames = []
         for index in range(gif.n_frames):
             gif.seek(index)
