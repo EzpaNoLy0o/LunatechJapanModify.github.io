@@ -355,6 +355,8 @@ class ConvergencePlot(QWidget):
 class ResultsPanel(QWidget):
     """空力結果。計算していない値は「未計算」、失敗した場合は「計算失敗」と表示し、推測値は出さない。"""
 
+    reportRequested = Signal()
+
     ROWS = (
         ("drag", "Drag (抗力) [N]"), ("downforce", "Downforce [N]"), ("lift", "Lift (揚力・上向き正) [N]"),
         ("side", "Side Force (横力) [N]"), ("cd", "Cd"), ("cl", "Cl (上向き正)"),
@@ -410,6 +412,10 @@ class ResultsPanel(QWidget):
         self.notes_label.setTextFormat(Qt.RichText)
         note_layout.addWidget(self.notes_label)
         layout.addWidget(note_box)
+        self.report_button = QPushButton("解析レポートを書き出し…")
+        self.report_button.setToolTip("条件・メッシュ・荷重・収束判定・履歴グラフを HTML と CSV で保存します。")
+        self.report_button.clicked.connect(self.reportRequested)
+        layout.addWidget(self.report_button)
         layout.addStretch(1)
 
         for signal in (scene.solverChanged, scene.tunnelChanged, scene.meshChanged, scene.meshSettingsChanged,

@@ -9,8 +9,8 @@ from datetime import datetime
 from pathlib import Path
 
 import pyvista as pv
-from PySide6.QtCore import QSettings, Qt
-from PySide6.QtGui import QAction, QActionGroup, QKeySequence
+from PySide6.QtCore import QSettings, Qt, QUrl
+from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import (
     QApplication, QFileDialog, QLabel, QMainWindow, QMessageBox, QProgressBar, QProgressDialog, QSplitter, QTabWidget,
     QVBoxLayout, QWidget,
@@ -32,6 +32,9 @@ from ..solver.run_job import STATUS_FAILED, load_summary
 from ..solver.settings import SolverSettings
 from ..tunnel.spec import TunnelSpec
 from .analysis_panels import MeshDisplayPanel, MeshPanel, MeshQualityView, TunnelPanel
+from ..mesh.request import analysis_parts
+from ..report.export import export_report
+from ..report.snapshot import build_snapshot
 from .flow_bar import BASE_LOOP_SECONDS, FlowControlBar
 from .job_runner import JobManager
 from .panels import DisplayPanel, InspectionTable, LogPanel, ModelPanel, PartTree, scrollable
@@ -184,6 +187,8 @@ class MainWindow(QMainWindow):
         self.act_screenshot = a("スクリーンショット", self._screenshot_dialog, "F12", "3D ビューを PNG で保存")
         self.act_export_animation = a("アニメーションを書き出し…", self._export_animation_dialog, None,
                                       "粒子・スモークのアニメーションを GIF または PNG 連番で保存")
+        self.act_export_report = a("解析レポートを書き出し…", self._export_report_dialog, "Ctrl+R",
+                                   "条件・メッシュ・荷重・収束判定を HTML と CSV で保存")
         self.act_quit = a("終了", self.close, "Ctrl+Q")
         self.act_fit = a("フィット", self.viewport.fit, "F", "モデル全体を表示")
         self.act_inspect = a("形状検査", self.inspect_selected, "Ctrl+Shift+I",
@@ -226,7 +231,7 @@ class MainWindow(QMainWindow):
         menu = self.menuBar()
         file_menu = menu.addMenu("ファイル")
         for item in (self.act_new, self.act_open, self.act_save, self.act_save_as, None, self.act_import, None,
-                     self.act_screenshot, self.act_export_animation, None, self.act_quit):
+                     self.act_export_report, self.act_screenshot, self.act_export_animation, None, self.act_quit):
             file_menu.addSeparator() if item is None else file_menu.addAction(item)
         view_menu = menu.addMenu("表示")
         view_menu.addAction(self.act_fit)
@@ -280,6 +285,7 @@ class MainWindow(QMainWindow):
         self.solver_panel.checkEnvironmentRequested.connect(self.check_environment)
         self.solver_panel.environmentEdited.connect(self._save_environment)
         self.flow_bar.exportRequested.connect(self._export_animation_dialog)
+        self.results_panel.reportRequested.connect(self._export_report_dialog)
         self.scene.modified.connect(self._on_modified)
         self.jobs.progress.connect(self._on_job_progress)
         self.jobs.busyChanged.connect(self._on_busy_changed)
@@ -862,6 +868,52 @@ class MainWindow(QMainWindow):
             logger.exception("スクリーンショットを保存できません")
             return
         logger.info("スクリーンショットを保存しました: %s", path)
+
+    # ------------------------------------------------------------------ レポート
+    def report_snapshot(self) -> dict:
+        """レポートに載せる、モデル・風洞・メッシュ・解析結果の現在の状態。"""
+        scene = self.scene
+        return build_snapshot(
+            project_name=self.project_dir.name if self.project_dir else None,
+            assembly=scene.assembly, analysis_parts=analysis_parts(scene.assembly), bounds=scene.analysis_bounds(),
+            tunnel=scene.tunnel, mesh_report=scene.mesh_report, mesh_state=scene.mesh_state(),
+            solver_settings=scene.solver_settings, solver_summary=scene.solver_summary, solver_state=scene.solver_state(),
+        )
+
+    def _export_report_dialog(self) -> None:
+        folder = Path(self.project_dir or paths.workspace_root()) / "reports"
+        folder.mkdir(parents=True, exist_ok=True)
+        target = QFileDialog.getExistingDirectory(self, "レポートを書き出すフォルダ (この中に日時のフォルダを作ります)", str(folder))
+        if target:
+            files = self.export_report(Path(target) / f"report_{datetime.now():%Y%m%d_%H%M%S}")
+            if files:
+                QDesktopServices.openUrl(QUrl.fromLocalFile(str(files["html"])))
+
+    def export_report(self, out_dir: str | Path) -> dict | None:
+        """解析レポート (HTML・CSV・JSON と 3D ビューの画像) を ``out_dir`` へ書き出す。
+
+        解析結果が無くても書き出せる (その場合、結果の欄は「未計算」になる)。
+        """
+        import io
+
+        from PIL import Image
+
+        screenshot = None
+        try:
+            buffer = io.BytesIO()
+            Image.fromarray(self.viewport.capture_frame()).save(buffer, format="PNG")
+            screenshot = buffer.getvalue()
+        except Exception:
+            logger.exception("レポート用の 3D ビュー画像を取得できません (画像なしで続行します)")
+        try:
+            files = export_report(self.report_snapshot(), out_dir, screenshot)
+        except OSError as exc:
+            logger.exception("レポートを書き出せません")
+            QMessageBox.critical(self, "書き出し失敗", f"レポートを書き出せませんでした。\n\n{exc}")
+            return None
+        logger.info("解析レポートを書き出しました: %s (%s)", out_dir, "、".join(path.name for path in files.values()))
+        self.statusBar().showMessage(f"解析レポートを書き出しました: {out_dir}", 8000)
+        return files
 
     def _export_animation_dialog(self) -> None:
         if self.post_view.particle_duration() <= 0:
