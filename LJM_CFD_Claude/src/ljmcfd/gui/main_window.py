@@ -12,7 +12,8 @@ import pyvista as pv
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QAction, QActionGroup, QKeySequence
 from PySide6.QtWidgets import (
-    QFileDialog, QLabel, QMainWindow, QMessageBox, QProgressBar, QSplitter, QTabWidget, QVBoxLayout, QWidget,
+    QApplication, QFileDialog, QLabel, QMainWindow, QMessageBox, QProgressBar, QProgressDialog, QSplitter, QTabWidget,
+    QVBoxLayout, QWidget,
 )
 
 from .. import APP_EDITION, APP_NAME, IMPLEMENTED_STAGE, __version__
@@ -31,6 +32,7 @@ from ..solver.run_job import STATUS_FAILED, load_summary
 from ..solver.settings import SolverSettings
 from ..tunnel.spec import TunnelSpec
 from .analysis_panels import MeshDisplayPanel, MeshPanel, MeshQualityView, TunnelPanel
+from .flow_bar import BASE_LOOP_SECONDS, FlowControlBar
 from .job_runner import JobManager
 from .panels import DisplayPanel, InspectionTable, LogPanel, ModelPanel, PartTree, scrollable
 from .post_panel import PostPanel
@@ -78,6 +80,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ レイアウト
     def _build_layout(self) -> None:
         self.viewport = Viewport(self.scene)
+        self.post_view = PostView(self.scene, self.viewport, self)
         self.part_tree = PartTree(self.scene)
         self.model_panel = ModelPanel(self.scene)
         self.display_panel = DisplayPanel(self.scene, self.viewport)
@@ -106,14 +109,21 @@ class MainWindow(QMainWindow):
         self.results_panel = ResultsPanel(self.scene)
         self.results_scroll = scrollable(self.results_panel)
         self.right_tabs.addTab(self.results_scroll, "空力結果")
-        self.post_view = PostView(self.scene, self.viewport, self)
         self.post_panel = PostPanel(self.scene, self.post_view)
         self.post_scroll = scrollable(self.post_panel)
         self.right_tabs.addTab(self.post_scroll, "可視化")
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.left_splitter)
-        self.main_splitter.addWidget(self.viewport)
+        # 中央: 3D ビューと、その直下の操作バー (断面・流線開始位置・タイムラインのスライダー)
+        self.flow_bar = FlowControlBar(self.scene, self.post_view)
+        self.center_panel = QWidget()
+        center_layout = QVBoxLayout(self.center_panel)
+        center_layout.setContentsMargins(0, 0, 0, 0)
+        center_layout.setSpacing(0)
+        center_layout.addWidget(self.viewport, 1)
+        center_layout.addWidget(self.flow_bar)
+        self.main_splitter.addWidget(self.center_panel)
         self.main_splitter.addWidget(self.right_tabs)
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 1)
@@ -172,6 +182,8 @@ class MainWindow(QMainWindow):
         self.act_save_as = a("名前を付けて保存…", lambda: self._save_project_dialog(True), "Ctrl+Shift+S")
         self.act_import = a("CAD 読み込み", self._import_dialog, "Ctrl+I", "STEP / IGES / STL を読み込む")
         self.act_screenshot = a("スクリーンショット", self._screenshot_dialog, "F12", "3D ビューを PNG で保存")
+        self.act_export_animation = a("アニメーションを書き出し…", self._export_animation_dialog, None,
+                                      "粒子・スモークのアニメーションを GIF または PNG 連番で保存")
         self.act_quit = a("終了", self.close, "Ctrl+Q")
         self.act_fit = a("フィット", self.viewport.fit, "F", "モデル全体を表示")
         self.act_inspect = a("形状検査", self.inspect_selected, "Ctrl+Shift+I",
@@ -214,7 +226,7 @@ class MainWindow(QMainWindow):
         menu = self.menuBar()
         file_menu = menu.addMenu("ファイル")
         for item in (self.act_new, self.act_open, self.act_save, self.act_save_as, None, self.act_import, None,
-                     self.act_screenshot, None, self.act_quit):
+                     self.act_screenshot, self.act_export_animation, None, self.act_quit):
             file_menu.addSeparator() if item is None else file_menu.addAction(item)
         view_menu = menu.addMenu("表示")
         view_menu.addAction(self.act_fit)
@@ -267,6 +279,7 @@ class MainWindow(QMainWindow):
         self.solver_panel.stopRequested.connect(self.stop_solver)
         self.solver_panel.checkEnvironmentRequested.connect(self.check_environment)
         self.solver_panel.environmentEdited.connect(self._save_environment)
+        self.flow_bar.exportRequested.connect(self._export_animation_dialog)
         self.scene.modified.connect(self._on_modified)
         self.jobs.progress.connect(self._on_job_progress)
         self.jobs.busyChanged.connect(self._on_busy_changed)
@@ -850,14 +863,83 @@ class MainWindow(QMainWindow):
             return
         logger.info("スクリーンショットを保存しました: %s", path)
 
+    def _export_animation_dialog(self) -> None:
+        if self.post_view.particle_duration() <= 0:
+            QMessageBox.information(self, "アニメーションの書き出し",
+                                    "先に下部のバーで「スモーク」を有効にしてください。")
+            return
+        folder = Path(self.project_dir or paths.workspace_root()) / "animations"
+        folder.mkdir(parents=True, exist_ok=True)
+        default = folder / f"ljmcfd_{datetime.now():%Y%m%d_%H%M%S}.gif"
+        file, _ = QFileDialog.getSaveFileName(self, "アニメーションを保存", str(default),
+                                              "アニメーション GIF (*.gif);;PNG 連番 (*.png)")
+        if file:
+            self.export_animation(file)
+
+    def export_animation(self, path: str | Path, n_frames: int = 90, scale: float = 0.6) -> bool:
+        """粒子アニメーションのタイムライン 1 周分を書き出す。
+
+        拡張子が ``.gif`` ならアニメーション GIF、``.png`` なら連番 PNG (``名前_0001.png`` …)。
+        フレームごとに時刻を設定して 3D ビューを撮影するだけで、解析は実行しない。
+        """
+        from PIL import Image
+
+        view = self.post_view
+        duration = view.particle_duration()
+        if duration <= 0 or n_frames < 2:
+            logger.error("アニメーションを書き出せません: 粒子・スモークの表示が有効ではありません")
+            return False
+        path = Path(path)
+        self.flow_bar.pause()
+        original_time = view.settings.particles_time
+        progress = QProgressDialog("アニメーションを書き出し中…", "中止", 0, n_frames, self)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(400)
+        frames = []
+        cancelled = False
+        try:
+            for index in range(n_frames):
+                view.set_particle_time(duration * index / n_frames)
+                image = Image.fromarray(self.viewport.capture_frame())
+                if scale != 1.0:
+                    size = (max(int(image.width * scale), 2), max(int(image.height * scale), 2))
+                    image = image.resize(size, Image.LANCZOS)
+                frames.append(image)
+                progress.setValue(index + 1)
+                QApplication.processEvents()
+                if progress.wasCanceled():
+                    cancelled = True
+                    break
+        finally:
+            progress.close()
+            view.set_particle_time(original_time)
+        if cancelled:
+            logger.warning("アニメーションの書き出しを中止しました")
+            return False
+        try:
+            if path.suffix.lower() == ".png":
+                for index, image in enumerate(frames, start=1):
+                    image.save(path.with_name(f"{path.stem}_{index:04d}.png"))
+            else:
+                path = path.with_suffix(".gif")
+                frame_ms = int(round(1000.0 * BASE_LOOP_SECONDS / max(view.settings.particles_speed, 1e-6) / n_frames))
+                frames[0].save(path, save_all=True, append_images=frames[1:], duration=max(frame_ms, 20), loop=0)
+        except OSError as exc:
+            logger.exception("アニメーションを保存できません")
+            QMessageBox.critical(self, "保存失敗", f"アニメーションを保存できませんでした。\n\n{exc}")
+            return False
+        logger.info("アニメーションを書き出しました: %s (%d フレーム)", path, len(frames))
+        self.statusBar().showMessage(f"アニメーションを書き出しました: {path}", 8000)
+        return True
+
     def _show_about(self) -> None:
         import PySide6
         import vtk
 
         lines = [
             f"<b>{APP_NAME} {APP_EDITION}</b> v{__version__}",
-            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD・風洞・メッシュ・OpenFOAM 解析・流れ場の可視化)",
-            "未実装: 下部スライダーによる断面・流線の操作と粒子アニメーション (Stage 5)、配布パッケージ (Stage 6)",
+            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD・風洞・メッシュ・OpenFOAM 解析・可視化・スライダー操作)",
+            "未実装: 結果のレポート出力、配布パッケージ (Stage 6)",
             "",
             f"Python {platform.python_version()} / PySide6 {PySide6.__version__} / "
             f"VTK {vtk.vtkVersion.GetVTKVersion()} / PyVista {pv.__version__}",

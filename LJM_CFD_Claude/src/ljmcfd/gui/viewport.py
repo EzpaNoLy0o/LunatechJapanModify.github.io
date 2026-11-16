@@ -115,7 +115,13 @@ class Viewport(QWidget):
         self._render_pending = False
         if getattr(self.plotter, "_closed", False) or self.plotter.render_window is None:
             return
-        self.plotter.render()
+        if self.plotter.isVisible():
+            # ウィジェットの再描画を 1 回だけ依頼する (再描画の中で VTK が 1 回描く)。
+            # plotter.render() は「描画 → 再描画イベント → もう一度描画」と 1 コマにつき 2 回描くので、
+            # スライダーのドラッグやアニメーションの滑らかさが半分になる。
+            QWidget.update(self.plotter)
+        else:
+            self.plotter.render()
 
     def shutdown(self) -> None:
         self.plotter.close()
@@ -235,6 +241,11 @@ class Viewport(QWidget):
     def screenshot(self, path: str | Path) -> None:
         self.plotter.render()
         self.plotter.screenshot(str(path))
+
+    def capture_frame(self) -> np.ndarray:
+        """現在の 3D ビューを画像 (高さ × 幅 × 3、uint8) として取り出す。動画書き出し用。"""
+        self.plotter.render()
+        return np.asarray(self.plotter.screenshot(return_img=True))[..., :3].copy()
 
     # ------------------------------------------------------------------ シーン同期
     def _on_parts_added(self, parts: list[Part]) -> None:

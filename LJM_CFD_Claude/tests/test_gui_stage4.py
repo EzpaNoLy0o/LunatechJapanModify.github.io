@@ -55,9 +55,9 @@ def test_panel_is_disabled_without_results(window):
     view, panel = window.post_view, window.post_panel
     assert not view.has_results() and "解析結果がありません" in panel.state_label.text()
     assert not any(box.isEnabled() for box in (panel.surface_box, panel.slice_box, panel.stream_box, panel.iso_box, panel.scale_box))
-    assert view.layer_actors() == {"surface": False, "slice": False, "streamlines": False, "iso": False}
+    assert view.layer_actors() == {"surface": False, "slice": False, "streamlines": False, "iso": False, "particles": False}
     view.update(slice_on=True, surface_on=True)             # 結果が無ければ何も描かない (架空の表示をしない)
-    assert view.layer_actors() == {"surface": False, "slice": False, "streamlines": False, "iso": False}
+    assert view.layer_actors() == {"surface": False, "slice": False, "streamlines": False, "iso": False, "particles": False}
 
 
 def test_surface_distribution_hides_cad(qtbot, window, box_step):
@@ -279,7 +279,7 @@ def test_post_settings_are_saved_with_the_project(qtbot, window, box_step, tmp_p
     assert str(view.results.results_dir).startswith(str(project_dir))
 
     window.new_project(confirm=False)
-    assert not view.has_results() and view.layer_actors() == {"surface": False, "slice": False, "streamlines": False, "iso": False}
+    assert not view.has_results() and view.layer_actors() == {"surface": False, "slice": False, "streamlines": False, "iso": False, "particles": False}
     assert not view.settings.slice_on
     assert window.open_project(project_dir)
     qtbot.waitUntil(lambda: len(window.scene.parts) == 1 and not window._restoring, timeout=TIMEOUT)
@@ -307,7 +307,7 @@ def test_visualise_real_openfoam_results(qtbot, window, box_step):
     view = window.post_view
     assert view.has_results() and view.results.available_fields() == ["Umag", "pressure", "Cp", "vorticity_mag", "k", "Q"]
     view.update(surface_on=True, slice_on=True, streamlines_on=True, iso_on=True)
-    assert view.layer_actors() == {"surface": True, "slice": True, "streamlines": True, "iso": True}
+    assert view.layer_actors() == {"surface": True, "slice": True, "streamlines": True, "iso": True, "particles": False}
     # 流線は物体を避けて流れる: 物体の内部 (沈み込み後の直方体) を通る点が無い
     points = actor_points(window, "post_streamlines")
     b = view.model_bounds()

@@ -66,7 +66,8 @@ def part_named(window, name):
 
 def test_layout_is_resizable_and_japanese(window):
     assert window.main_splitter.count() == 3 and window.outer_splitter.count() == 2
-    assert window.main_splitter.widget(1) is window.viewport          # 中央が 3D ビュー
+    assert window.main_splitter.widget(1) is window.center_panel      # 中央が 3D ビュー (+ 直下の操作バー)
+    assert window.viewport.parentWidget() is window.center_panel and window.flow_bar.parentWidget() is window.center_panel
     assert window.outer_splitter.widget(1) is window.bottom_tabs      # 下部がログ
     assert [window.bottom_tabs.tabText(i) for i in range(window.bottom_tabs.count())] == ["ログ", "形状検査", "メッシュ品質", "残差・荷重"]
     before = window.main_splitter.sizes()
