@@ -32,7 +32,7 @@ def _slider() -> QSlider:
     slider = QSlider(Qt.Horizontal)
     slider.setRange(0, SLIDER_STEPS)
     slider.setPageStep(SLIDER_STEPS // 20)
-    slider.setMinimumWidth(90)        # 3D ビューが狭いときも左右のパネルを押し潰さない
+    slider.setMinimumWidth(50)        # 3D ビューが狭いときも左右のパネルを押し潰さない
     return slider
 
 
