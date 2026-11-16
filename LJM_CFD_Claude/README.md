@@ -34,7 +34,7 @@ Windows 11 用の自動車空力解析ワークベンチです。STEP などの�
 | 書き出した `polyMesh` | OpenFOAM 14 の `checkMesh` が「Mesh OK」と判定。自前の品質指標（非直交性・歪度・体積）は `checkMesh` の値と一致 |
 | **Stage 3 を Windows + WSL2 で実行** | **動作確認コマンドで確認済み**（ユーザー実施）。WSL（Ubuntu-24.04）の OpenFOAM 14 で、読み込み → メッシュ → 30 反復の解析 → 可視化 → GUI 描画が全項目成功。GUI からの長い解析（停止・続きからなど）と、スライダー・レポートの手動操作は **未確認** |
 | WSL への OpenFOAM 導入スクリプト | 開発環境では **未実行**（ユーザーの WSL には OpenFOAM 14 が導入済みで、アプリから検出できています） |
-| 配布パッケージ（PyInstaller） | 同じ定義ファイルから **Linux 上で** ビルドし、ビルドした実行ファイルで動作確認（読み込み → メッシュ → 解析 → 表示）が全項目成功。**Windows でのビルド（`build_windows.bat`）は未確認** |
+| 配布パッケージ（PyInstaller） | **Windows 11 でビルド確認済み**（ユーザー実施）。`build_windows.bat` が完了し、できた `ljmcfd-worker.exe` での動作確認（読み込み → メッシュ → OpenFOAM 環境の検出 → GUI 描画）が成功。配布版での CFD 解析の実行と、別の PC へコピーしての起動は **未確認** |
 
 Windows での確認は、まず **動作確認コマンド**（下記「7. 動作確認」）を実行するのが早道です。読み込み → メッシュ → WSL の OpenFOAM での短い解析 → 表示までを
 1 回のコマンドで実際に動かし、項目ごとに OK / 失敗 / スキップを表示します。
@@ -461,8 +461,8 @@ PyInstaller で `dist\LJM_CFD_Claude\` フォルダを作ります（数分、�
 
 - OpenFOAM は含みません。配布先の PC にも WSL2 と OpenFOAM 14 が必要です（上記「6. OpenFOAM のセットアップ」）。
 - 作業フォルダ（`workspace`）は実行ファイルの隣に作られます。英数字だけのパスで、書き込みできる場所に置いてください（`C:\Program Files` は不可）。
-- **Windows でのビルドは未確認です。** 定義ファイル（`packaging\ljmcfd.spec`）は Linux で同じ内容をビルドして動作を確認していますが、
-  Windows 固有の DLL の収集で不足が出る可能性があります。失敗した場合は表示されたメッセージをお知らせください。
+- Windows 11 でのビルドと、ビルドした実行ファイルでの動作確認（解析を除く）は確認済みです。配布版で解析まで確かめるには
+  `dist\LJM_CFD_Claude\ljmcfd-worker.exe --self-test` を実行してください。
 
 ## 既知の制限
 
