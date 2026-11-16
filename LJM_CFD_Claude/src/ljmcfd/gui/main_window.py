@@ -990,8 +990,8 @@ class MainWindow(QMainWindow):
 
         lines = [
             f"<b>{APP_NAME} {APP_EDITION}</b> v{__version__}",
-            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD・風洞・メッシュ・OpenFOAM 解析・可視化・スライダー操作)",
-            "未実装: 結果のレポート出力、配布パッケージ (Stage 6)",
+            f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD・風洞・メッシュ・OpenFOAM 解析・可視化・スライダー操作・レポート出力)",
+            "解析は定常 RANS (k-ω SST) です。非定常解析・ホイール回転・多孔質体には未対応です。",
             "",
             f"Python {platform.python_version()} / PySide6 {PySide6.__version__} / "
             f"VTK {vtk.vtkVersion.GetVTKVersion()} / PyVista {pv.__version__}",

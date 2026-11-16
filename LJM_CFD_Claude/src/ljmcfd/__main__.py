@@ -2,6 +2,7 @@
 
 * ``python -m ljmcfd``                      GUI を起動
 * ``python -m ljmcfd --job <name> <json>``  ジョブ (子プロセス) を実行 — GUI が内部で使用
+* ``python -m ljmcfd --self-test``          動作確認 (小さな形状で読み込み → メッシュ → 解析 → 表示を実際に動かす)
 """
 
 from __future__ import annotations
@@ -19,6 +20,10 @@ def main(argv: list[str] | None = None) -> int:
         from .core.jobs import run_job_cli
 
         return run_job_cli(argv[1], argv[2])
+    if argv and argv[0] == "--self-test":
+        from .selftest import run_selftest
+
+        return run_selftest(argv[1:])
     from .app import run_gui
 
     return run_gui(argv)

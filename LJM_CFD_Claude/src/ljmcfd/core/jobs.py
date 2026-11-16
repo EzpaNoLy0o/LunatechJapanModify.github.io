@@ -96,8 +96,19 @@ class StdoutContext(JobContext):
 def job_command(name: str, args_path: str) -> list[str]:
     """ジョブを子プロセスとして起動するコマンドライン。"""
     if getattr(sys, "frozen", False):  # PyInstaller 等で固めた実行ファイル
-        return [sys.executable, "--job", name, str(args_path)]
+        return [frozen_worker(), "--job", name, str(args_path)]
     return [worker_python(), "-m", "ljmcfd", "--job", name, str(args_path)]
+
+
+def frozen_worker(executable: str | None = None) -> str:
+    """配布版でジョブを実行する実行ファイル。
+
+    GUI 用の実行ファイルは Windows ではコンソールなしで作るので、標準出力で親と通信するジョブには
+    同じフォルダのコンソール版 ``ljmcfd-worker`` を使う。無ければ GUI と同じ実行ファイルで代用する。
+    """
+    exe = Path(executable or sys.executable)
+    worker = exe.with_name("ljmcfd-worker" + exe.suffix)
+    return str(worker if worker.is_file() else exe)
 
 
 def worker_python(executable: str | None = None) -> str:
