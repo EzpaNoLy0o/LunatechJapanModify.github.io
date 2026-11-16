@@ -29,11 +29,11 @@ Windows 11 用の自動車空力解析ワークベンチです。STEP などの�
 | 対象 | 状況 |
 |---|---|
 | Stage 1〜2（Windows 11 実機） | **確認済み**。自動テスト 82 件成功 + 手動確認（ユーザー実施） |
-| Stage 1〜6（Linux・Ubuntu 24.04・OpenFOAM 14） | 自動テスト 154 件すべて成功。実物の OpenFOAM 14 で解析・停止・続きから・失敗時の扱い・結果の可視化・粒子アニメーション・レポート出力を確認。指示書の「最終目標」の 11 手順（STEP 読み込み → … → 保存・再読み込み）を GUI で通しで実行するテストを含みます |
-| Stage 4〜6（可視化・スライダー・アニメーション・レポート）を Windows で実行 | **未確認**。OpenFOAM を使わない合成データのテスト（`test_post.py`・`test_report.py`・`test_gui_stage4.py`・`test_gui_stage5.py` と `test_gui_stage6.py` の一部）は Windows でも実行できます |
+| Stage 1〜6（Linux・Ubuntu 24.04・OpenFOAM 14） | 自動テスト 155 件すべて成功。実物の OpenFOAM 14 で解析・停止・続きから・失敗時の扱い・結果の可視化・粒子アニメーション・レポート出力を確認。指示書の「最終目標」の 11 手順を GUI で通しで実行するテストを含みます |
+| Stage 1〜6 の自動テスト（Windows 11 実機） | **確認済み**（ユーザー実施）。141 件成功、14 件スキップ。スキップは、Linux 上の OpenFOAM を直接実行する方式のテストです |
 | 書き出した `polyMesh` | OpenFOAM 14 の `checkMesh` が「Mesh OK」と判定。自前の品質指標（非直交性・歪度・体積）は `checkMesh` の値と一致 |
-| **Stage 3 を Windows + WSL2 で実行** | **未確認**。`wsl.exe` 経由の起動・`/mnt/c` 上での実行は、開発環境（Linux）では試せていません |
-| WSL への OpenFOAM 導入スクリプト | **未実行**。公式手順と同じ内容ですが、開発環境では試せていません |
+| **Stage 3 を Windows + WSL2 で実行** | **動作確認コマンドで確認済み**（ユーザー実施）。WSL（Ubuntu-24.04）の OpenFOAM 14 で、読み込み → メッシュ → 30 反復の解析 → 可視化 → GUI 描画が全項目成功。GUI からの長い解析（停止・続きからなど）と、スライダー・レポートの手動操作は **未確認** |
+| WSL への OpenFOAM 導入スクリプト | 開発環境では **未実行**（ユーザーの WSL には OpenFOAM 14 が導入済みで、アプリから検出できています） |
 | 配布パッケージ（PyInstaller） | 同じ定義ファイルから **Linux 上で** ビルドし、ビルドした実行ファイルで動作確認（読み込み → メッシュ → 解析 → 表示）が全項目成功。**Windows でのビルド（`build_windows.bat`）は未確認** |
 
 Windows での確認は、まず **動作確認コマンド**（下記「7. 動作確認」）を実行するのが早道です。読み込み → メッシュ → WSL の OpenFOAM での短い解析 → 表示までを
@@ -437,7 +437,7 @@ C:\LJM_CFD_Claude\scripts\selftest.bat
 C:\LJM_CFD_Claude\scripts\run_tests.bat
 ```
 
-実際にアプリのウィンドウが開閉します（数分。Linux の開発機で 154 件・約 4 分）。OpenFOAM を使うテストは、Windows では自動的にスキップされます
+実際にアプリのウィンドウが開閉します（数分。Linux の開発機で 155 件・約 4 分）。OpenFOAM を使うテストは、Windows では自動的にスキップされます
 （テストは Linux 上の OpenFOAM を直接実行する方式のため）。Linux では仮想ディスプレイを使います。
 
 ```bash
