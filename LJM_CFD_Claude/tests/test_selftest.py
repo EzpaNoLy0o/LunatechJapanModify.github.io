@@ -27,6 +27,9 @@ def test_selftest_runs_the_real_pipeline_in_a_subprocess(tmp_path):
     if native_openfoam_available():
         assert "[OK] OpenFOAM 環境" in output and "[OK] CFD 解析 30 反復 (子プロセス)" in output
         assert "[OK] 結果の可視化データ" in output and "収束した値ではありません" in output
+        assert "[OK] ボリューム煙の密度場" in output and "車体の内部に煙なし" in output
+        if has_display:
+            assert "ボリューム煙を描画" in output
         assert "結果: すべて成功" in output if has_display else "スキップ 1 件" in output
     elif sys.platform != "win32":
         # Windows では WSL に OpenFOAM があれば解析まで実行され、無ければスキップになる (どちらも正しい)
@@ -49,7 +52,8 @@ def test_selftest_without_openfoam_skips_the_analysis_but_passes(tmp_path, monke
     assert "[OK] メッシュ生成ジョブ (子プロセス)" in output and "[失敗]" not in output
     assert "[スキップ] OpenFOAM 環境" in output and "OpenFOAM を使えません" in output
     assert "[スキップ] CFD 解析 30 反復 (子プロセス)" in output and "[スキップ] 結果の可視化データ" in output
-    assert "実行した項目はすべて成功 (スキップ 4 件" in output
+    assert "[スキップ] ボリューム煙の密度場" in output
+    assert "実行した項目はすべて成功 (スキップ 5 件" in output
 
 
 def test_selftest_reports_failures_and_skips_dependent_steps(tmp_path, monkeypatch, capsys):

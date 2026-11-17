@@ -220,6 +220,36 @@ def run_selftest(argv: list[str] | None = None) -> int:
             raise RuntimeError(f"結果から表示を作れません: 断面 {n_cut} 点、流線 {n_lines} 本")
         return f"断面 {n_cut:,} 点、流線 {n_lines} 本、粒子アニメーション {animation.duration:.3f} 秒"
 
+    def smoke() -> str:
+        from .post.result_set import ResultSet
+        from .smoke.engine import SmokeEngine
+        from .smoke.settings import SmokeSettings
+
+        if "summary" not in state:
+            raise Skip("解析結果が無いため")
+        summary, report = state["summary"], state["report"]
+        results = ResultSet(Path(summary["results_dir"]), summary)
+        bounds = list(report["model_bounds"])
+        bounds[4] -= report.get("sink", 0.0)
+        bounds[5] -= report.get("sink", 0.0)
+        engine = SmokeEngine()
+        engine.set_flow(results.flow, results.free_stream_speed, results.domain)
+        settings = SmokeSettings(quality="low")
+        settings.emitters = engine.default_emitters(settings, bounds)
+        built = engine.build(engine.plan(settings, bounds))
+        smoke_field = built.smoke
+        density = smoke_field.frame(built.duration)
+        x, y, z = smoke_field.grid.centers()
+        inside = ((x[None, None, :] > bounds[0] + 0.05) & (x[None, None, :] < bounds[1] - 0.05) & (y[None, :, None] > bounds[2] + 0.05)
+                  & (y[None, :, None] < bounds[3] - 0.05) & (z[:, None, None] > max(bounds[4], 0.0) + 0.05) & (z[:, None, None] < bounds[5] - 0.05))
+        if density.max() <= 0:
+            raise RuntimeError("煙の密度場が空です")
+        if inside.any() and density[inside].max() > 0:
+            raise RuntimeError("煙が車体 (直方体) の内部に入っています")
+        state["smoke_ok"] = True
+        return (f"格子 {'×'.join(map(str, smoke_field.grid.dims))}、流跡線 {built.stats.get('tracks', 0)} 本、"
+                f"車体の内部に煙なし、{built.stats.get('seconds_total', 0.0):.1f} 秒")
+
     def gui() -> str:
         if not with_gui:
             raise Skip("--no-gui が指定されたため")
@@ -240,6 +270,7 @@ def run_selftest(argv: list[str] | None = None) -> int:
                 app.processEvents()
                 time.sleep(0.01)
             if "summary" in state:
+                window.scene.set_mesh_report(state["report"])          # 車体の位置 (煙の放出源の自動配置に使う)
                 window.scene.set_solver_summary(state["summary"])
                 window.post_view.update(slice_on=True, particles_on=True)
                 for _ in range(10):
@@ -253,11 +284,40 @@ def run_selftest(argv: list[str] | None = None) -> int:
                 if not (layers["slice"] and layers["particles"]):
                     raise RuntimeError(f"解析結果のレイヤーを表示できません: {layers}")
                 detail += "、断面とスモークを表示"
+                if state.get("smoke_ok"):
+                    detail += "、" + gui_volume_smoke(app, window)
             return detail
         finally:
             window._modified = False
             window.close()
             app.processEvents()
+
+    def gui_volume_smoke(app, window) -> str:
+        """ボリューム煙を GUI で描画し、描画方式と 1 コマの描画時間を返す。"""
+        from .gui.post_view import STYLE_VOLUME
+
+        view = window.post_view
+        view.update(particles_style=STYLE_VOLUME, slice_on=False)
+        deadline = time.perf_counter() + 120.0
+        while (view.particle_duration() <= 0 or view.smoke_layer.building) and time.perf_counter() < deadline:
+            app.processEvents()
+            time.sleep(0.02)
+        layer = view.smoke_layer
+        if layer.error:
+            raise RuntimeError(f"ボリューム煙を表示できません: {layer.error}")
+        if view.particle_duration() <= 0 or not view.layer_actors()["particles"]:
+            raise RuntimeError("ボリューム煙が描画されていません (時間切れ)")
+        view.set_particle_time(0.8 * view.particle_duration(), block=True)
+        plotter = window.viewport.plotter
+        plotter.render()
+        started = time.perf_counter()
+        for step in range(6):
+            view.set_particle_time((0.5 + 0.08 * step) * view.particle_duration(), block=True)
+            plotter.render()
+        per_frame = (time.perf_counter() - started) / 6 * 1000
+        renderer = layer.renderer
+        gl = renderer.gl.get("renderer", "不明")
+        return f"ボリューム煙を描画 ({'GPU' if renderer.backend == 'gpu' else 'CPU'} レイキャスティング、OpenGL: {gl}、1 コマ {per_frame:.0f} ms)"
 
     check("ライブラリの読み込み", libraries)
     if check("作業フォルダへの書き込み", workspace):
@@ -266,6 +326,7 @@ def run_selftest(argv: list[str] | None = None) -> int:
         check("OpenFOAM 環境", openfoam)
         check(f"CFD 解析 {SOLVER_ITERATIONS} 反復 (子プロセス)", solver)
         check("結果の可視化データ (断面・流線・粒子)", visualisation)
+        check("ボリューム煙の密度場", smoke)
     check("GUI と 3D 描画", gui)
 
     failed = [name for name, status, _detail in rows if status == FAILED]

@@ -15,7 +15,8 @@ from ..post.result_set import AXES, VOLUME_FIELDS
 from . import theme
 from .analysis_panels import _set, _spin
 from .panels import LengthSpin, _label
-from .post_view import STYLE_PARTICLE, STYLE_SMOKE, PostView
+from ..smoke.engine import TIMELINE_FRAMES
+from .post_view import STYLE_LABELS, PostView
 from .scene import Scene
 
 SLIDER_STEPS = 1000
@@ -96,8 +97,12 @@ class FlowControlBar(QWidget):
         # --- 3 行目: 粒子・スモークのタイムライン -------------------------
         self.particle_check = QCheckBox("スモーク")
         self.particle_style = QComboBox()
-        self.particle_style.addItem("スモーク", STYLE_SMOKE)
-        self.particle_style.addItem("粒子", STYLE_PARTICLE)
+        for key, text in STYLE_LABELS.items():
+            self.particle_style.addItem(text, key)
+        # 長い選択肢の幅でバーが広がり、左右のパネルを押さないようにする (開いた一覧には全文が出る)
+        self.particle_style.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.particle_style.setMinimumContentsLength(5)
+        self.particle_style.setToolTip("表示方式: ボリューム煙 (立体的な連続した煙)、筋・リボン・チューブ・粒子 (流跡線に沿った補助的な表示)")
         self.density_spin = QSpinBox()
         self.density_spin.setRange(1, 60)
         self.density_spin.setPrefix("密度 ")
@@ -130,6 +135,10 @@ class FlowControlBar(QWidget):
         transport.setContentsMargins(0, 0, 0, 0)
         transport.setSpacing(4)
         self.first_button = QPushButton("先頭")
+        self.step_back_button = QPushButton("|◀")
+        self.step_button = QPushButton("▶|")
+        self.step_back_button.setToolTip("1 コマ戻します。")
+        self.step_button.setToolTip("1 コマ進めます。")
         self.rewind_button = QPushButton("◀ 巻き戻し")
         self.play_button = QPushButton("▶ 再生")
         self.pause_button = QPushButton("一時停止")
@@ -146,24 +155,35 @@ class FlowControlBar(QWidget):
         self.export_button = QPushButton("書き出し…")
         self.export_button.setToolTip("タイムライン 1 周分をアニメーション GIF または PNG 連番として保存します。")
         for button in (self.first_button, self.rewind_button, self.play_button, self.pause_button, self.stop_button,
-                       self.export_button):
+                       self.export_button, self.step_back_button, self.step_button):
             button.setFocusPolicy(Qt.NoFocus)
-            button.setStyleSheet("padding: 4px 8px;")
-        for button in (self.first_button, self.rewind_button, self.play_button, self.pause_button, self.stop_button):
+            button.setStyleSheet("padding: 4px 6px;")
+        for button in (self.step_back_button, self.step_button):
+            button.setStyleSheet("padding: 4px 4px;")
+        for button in (self.first_button, self.step_back_button, self.rewind_button, self.play_button, self.pause_button,
+                       self.stop_button, self.step_button):
             transport.addWidget(button)
-        transport.addSpacing(8)
-        transport.addWidget(_label("速度", "dim"))
+        transport.addSpacing(4)
+        self.speed_combo.setToolTip("再生速度 (タイムライン全体を × 1 で 8 秒)。")
         transport.addWidget(self.speed_combo)
         transport.addWidget(self.loop_check)
         transport.addStretch(1)
-        transport.addWidget(self.export_button)
         outer.addLayout(transport)
 
         # --- 注記: 定常解析の粒子表示であること (粒子表示中だけ出す) -------
         self.notice = QLabel("定常 RANS の速度場に沿った粒子軌跡です。時間変化する流れ (非定常解析) の結果ではありません。")
         self.notice.setWordWrap(True)          # 幅が足りなければ折り返す (バーの最小幅を広げて左右のパネルを押し潰さない)
         self.notice.setStyleSheet(f"color: {theme.WARN};")
-        outer.addWidget(self.notice)
+        notice_row = QHBoxLayout()
+        notice_row.setContentsMargins(0, 0, 0, 0)
+        notice_row.addWidget(self.notice, 1)
+        notice_row.addWidget(self.export_button, 0, Qt.AlignTop)
+        outer.addLayout(notice_row)
+        # ボリューム煙の計算の状態 (準備中・完了・失敗)
+        self.smoke_status = QLabel("")
+        self.smoke_status.setWordWrap(True)
+        self.smoke_status.setProperty("role", "dim")
+        outer.addWidget(self.smoke_status)
 
         u = view.update
         self.slice_check.toggled.connect(lambda on: u(slice_on=bool(on)))
@@ -178,6 +198,10 @@ class FlowControlBar(QWidget):
         self.particle_check.toggled.connect(self._on_particles_toggled)
         self.particle_style.activated.connect(lambda _i: u(particles_style=self.particle_style.currentData()))
         self.time_slider.valueChanged.connect(self._on_time_slider)
+        self.time_slider.sliderReleased.connect(view.settle_particle_time)
+        self.step_back_button.clicked.connect(lambda: self.step(-1))
+        self.step_button.clicked.connect(lambda: self.step(1))
+        view.smoke_layer.stateChanged.connect(self._refresh_smoke_status)
         self.first_button.clicked.connect(self.go_to_start)
         self.rewind_button.clicked.connect(self.rewind)
         self.play_button.clicked.connect(self.play)
@@ -250,12 +274,26 @@ class FlowControlBar(QWidget):
 
     def pause(self) -> None:
         self._timer.stop()
+        self.view.settle_particle_time()           # 再生中に低解像度で出していた煙を、本来の解像度へ戻す
         self._refresh_buttons()
 
     def stop(self) -> None:
         self._timer.stop()
         self.view.set_particle_time(0.0)
+        self.view.settle_particle_time()
         self._refresh_buttons()
+
+    def step(self, direction: int) -> None:
+        """1 コマ (タイムラインの 1/240) 進める・戻す。ループ再生ならば端で反対側へ回る。"""
+        duration = self.view.particle_duration()
+        if duration <= 0:
+            return
+        self.pause()
+        frame = duration / (TIMELINE_FRAMES - 1)
+        index = int(round(self.view.settings.particles_time / frame)) + (1 if direction > 0 else -1)
+        if self.view.settings.particles_loop:
+            index %= TIMELINE_FRAMES
+        self.view.set_particle_time(min(max(index, 0), TIMELINE_FRAMES - 1) * frame)
 
     def go_to_start(self) -> None:
         self.view.set_particle_time(0.0)
@@ -276,7 +314,7 @@ class FlowControlBar(QWidget):
             self.view.set_particle_time(time)
             self.pause()                       # ループなしでは端で止まる
             return
-        self.view.set_particle_time(time)
+        self.view.set_particle_time(time, interactive=True)
 
     def _tick(self) -> None:
         elapsed = self._clock.restart() / 1000.0
@@ -290,7 +328,8 @@ class FlowControlBar(QWidget):
     def _on_time_slider(self, step: int) -> None:
         duration = self.view.particle_duration()
         if duration > 0:
-            self.view.set_particle_time(duration * step / SLIDER_STEPS)
+            # ドラッグ中は、間に合わなければ低解像度の煙を出す (離したら本来の解像度へ戻す)
+            self.view.set_particle_time(duration * step / SLIDER_STEPS, interactive=self.time_slider.isSliderDown())
 
     # ------------------------------------------------------------------ 表示
     def _refresh_buttons(self) -> None:
@@ -301,6 +340,8 @@ class FlowControlBar(QWidget):
         self.pause_button.setEnabled(enabled and playing)
         self.stop_button.setEnabled(enabled)
         self.first_button.setEnabled(enabled)
+        self.step_button.setEnabled(enabled)
+        self.step_back_button.setEnabled(enabled)
         self.time_slider.setEnabled(enabled)
         self.export_button.setEnabled(enabled)
 
@@ -338,7 +379,26 @@ class FlowControlBar(QWidget):
         _set(self.density_spin, int(round(s.particles_density)))
         _set(self.size_spin, s.particles_size)
         self.notice.setVisible(s.particles_on)
+        self.notice.setText(self._notice_text())
+        self._refresh_smoke_status()
         if not s.particles_on and self.is_playing():
             self._timer.stop()
+        self._refresh_time()
+        self._refresh_buttons()
+
+    def _notice_text(self) -> str:
+        what = "煙" if self.view.is_volume_smoke() else "粒子軌跡"
+        text = f"定常 RANS の速度場に沿った{what}です。時間変化する流れ (非定常解析) の結果ではありません。"
+        convergence = (self.scene.solver_summary or {}).get("convergence") or {}
+        if convergence.get("level") not in (None, "converged"):
+            text += f" 元の CFD 結果は「{convergence.get('label', '未収束')}」です (表示の品質を上げても解析の精度は変わりません)。"
+        return text
+
+    def _refresh_smoke_status(self) -> None:
+        layer = self.view.smoke_layer
+        active = self.view.settings.particles_on and self.view.is_volume_smoke()
+        self.smoke_status.setVisible(active)
+        if active:
+            self.smoke_status.setText(layer.status_text())
         self._refresh_time()
         self._refresh_buttons()

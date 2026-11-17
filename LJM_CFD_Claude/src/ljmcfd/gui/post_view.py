@@ -17,7 +17,10 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from ..post.particles import AnimationSource, SteadyPathlines
 from ..post.result_set import AXES, COLORMAPS, SURFACE_FIELDS, VOLUME_FIELDS, FieldInfo, ResultSet, SeedSpec, default_seed
+from ..smoke.emitter import preset_emitters
+from ..smoke.settings import SmokeSettings
 from .scene import Scene
+from .smoke_view import VOLUME_NAME, SmokeLayer
 from .viewport import Viewport
 
 logger = logging.getLogger("ljmcfd.post")
@@ -25,12 +28,26 @@ logger = logging.getLogger("ljmcfd.post")
 SOLID = "solid"          # 流線・等値面を物理量で色分けせず単色で描く
 LAYERS = ("surface", "slice", "streamlines", "iso", "particles")
 STYLE_PARTICLE = "particle"   # 点の粒子
-STYLE_SMOKE = "smoke"         # 尾を引く半透明の筋 (煙のように見える)
+STYLE_SMOKE = "smoke"         # 尾を引く半透明の筋
+STYLE_RIBBON = "ribbon"       # 半透明のリボン (補助的な表示)
+STYLE_TUBE = "tube"           # 半透明のチューブ (補助的な表示)
+STYLE_VOLUME = "volume"       # 立体的な連続した煙 (ボリューム表示)
+STYLE_VOLUME_HQ = "volume_hq" # 高品質のボリューム煙 (細かい格子・細かいサンプリング・陰影)
+VOLUME_STYLES = (STYLE_VOLUME, STYLE_VOLUME_HQ)
+#: 表示方式の一覧 (操作バーの選択肢の順)
+STYLE_LABELS = {
+    STYLE_VOLUME: "ボリューム煙", STYLE_VOLUME_HQ: "高品質ボリューム煙", STYLE_SMOKE: "筋 (スモーク)",
+    STYLE_RIBBON: "リボン", STYLE_TUBE: "チューブ", STYLE_PARTICLE: "粒子",
+}
 SMOKE_TRAIL_POINTS = 12
 #: スモークの筋 1 本の長さ (タイムライン全体に対する比)
 SMOKE_TRAIL_FRACTION = 0.07
+RIBBON_TRAIL_POINTS = 24
+RIBBON_TRAIL_FRACTION = 0.18
 #: 定常解析の粒子表示に必ず添える注記 (3D ビュー内。スクリーンショットや動画にも残る)
 STEADY_NOTICE = "Steady RANS result: particles follow the steady velocity field (not a transient simulation)"
+SMOKE_NOTICE = "Steady RANS result: smoke follows the steady velocity field (not a transient simulation)"
+UNCONVERGED_NOTICE = "CFD result is NOT converged: the flow shown is for reference only"
 
 
 @dataclass
@@ -73,11 +90,13 @@ class PostSettings:
     particles_speed: float = 1.0        # 再生速度の倍率
     seed_slider_axis: str = "y"         # 下部スライダーで動かす開始位置の軸
     scales: dict[str, ColorScale] = field(default_factory=dict)
+    smoke: SmokeSettings = field(default_factory=SmokeSettings)    # ボリューム煙の設定 (v0.7 から。無ければ既定値)
 
     def to_dict(self) -> dict:
         data = asdict(self)
         data["seed"] = self.seed.to_dict()
         data["scales"] = {key: asdict(scale) for key, scale in self.scales.items()}
+        data["smoke"] = self.smoke.to_dict()
         return data
 
     @classmethod
@@ -86,13 +105,17 @@ class PostSettings:
         settings = cls()
         seed = data.pop("seed", None)
         scales = data.pop("scales", None) or {}
+        smoke = data.pop("smoke", None)
         for name, default in asdict(settings).items():
-            if name in ("seed", "scales") or name not in data:
+            if name in ("seed", "scales", "smoke") or name not in data:
                 continue
             value = data[name]
             value = bool(value) if isinstance(default, bool) else float(value) if isinstance(default, float) else str(value)
             setattr(settings, name, value)
         settings.seed = SeedSpec.from_dict(seed)
+        settings.smoke = SmokeSettings.from_dict(smoke if isinstance(smoke, dict) else None)
+        if settings.particles_style not in STYLE_LABELS:
+            settings.particles_style = STYLE_SMOKE
         for key, raw in scales.items():
             settings.scales[str(key)] = ColorScale(
                 auto=bool(raw.get("auto", True)), vmin=float(raw.get("vmin", 0.0)), vmax=float(raw.get("vmax", 1.0)),
@@ -126,6 +149,7 @@ class PostView(QObject):
         self._cloud: pv.PolyData | None = None
         self._pending_seed: dict = {}
         self._bars: list[str] = []
+        self.smoke_layer = SmokeLayer(self)
         scene.solverChanged.connect(self.reload)
         scene.cleared.connect(self._on_cleared)
         viewport.themeChanged.connect(lambda: self.refresh_all(recompute=False))     # 色だけの変更
@@ -146,6 +170,7 @@ class PostView(QObject):
                 logger.error("解析結果を読み込めません: %s", exc)
         if self.results is not None:
             self._initialize_defaults()
+        self.smoke_layer.set_results(self.results)
         self.refresh_all()
         self.resultsChanged.emit()
         self.changed.emit()
@@ -504,7 +529,7 @@ class PostView(QObject):
         actors = self.plotter.actors
         return {"surface": "post_surface" in actors, "slice": "post_slice" in actors,
                 "streamlines": "post_streamlines" in actors, "iso": "post_iso" in actors,
-                "particles": "post_particles" in actors}
+                "particles": "post_particles" in actors or VOLUME_NAME in actors}
 
     # ------------------------------------------------------------------ 粒子・スモーク
     def animation(self) -> AnimationSource | None:
@@ -522,9 +547,10 @@ class PostView(QObject):
         s = self.settings
         seed = replace(s.seed, both_directions=False)       # 粒子は開始面から下流へ流す
         density = max(int(round(s.particles_density)), 1)
-        trail = SMOKE_TRAIL_POINTS if s.particles_style == STYLE_SMOKE else 1
+        trail, fraction = {STYLE_SMOKE: (SMOKE_TRAIL_POINTS, SMOKE_TRAIL_FRACTION), STYLE_RIBBON: (RIBBON_TRAIL_POINTS, RIBBON_TRAIL_FRACTION),
+                           STYLE_TUBE: (RIBBON_TRAIL_POINTS, RIBBON_TRAIL_FRACTION)}.get(s.particles_style, (1, SMOKE_TRAIL_FRACTION))
         lines_key = (id(self.results), tuple(asdict(seed).values()))
-        key = (lines_key, density, trail)
+        key = (lines_key, density, trail, fraction)
         if self._animation is None or self._animation_key != key:
             if self._pathlines is None or self._pathlines_key != lines_key:
                 if self._streamlines is not None and self._streamlines_seed == seed:
@@ -533,34 +559,129 @@ class PostView(QObject):
                     self._pathlines = self.results.streamlines(seed)
                 self._pathlines_key = lines_key
             self._animation = SteadyPathlines(self._pathlines, particles_per_line=density, trail_points=trail,
-                                              trail_fraction=SMOKE_TRAIL_FRACTION)
+                                              trail_fraction=fraction)
             self._animation_key = key
         return self._animation
 
+    def is_volume_smoke(self) -> bool:
+        return self.settings.particles_style in VOLUME_STYLES
+
     def particle_duration(self) -> float:
-        """タイムラインの長さ [s]。粒子表示が無効・結果なしのときは 0。"""
+        """タイムラインの長さ [s]。粒子表示が無効・結果なし・煙の準備中は 0。"""
         if not self.settings.particles_on:
             return 0.0
+        if self.is_volume_smoke():
+            return self.smoke_layer.duration()
         source = self.animation()
         return source.duration if source is not None else 0.0
 
-    def set_particle_time(self, time: float) -> None:
-        """タイムラインの時刻を設定する。OpenFOAM も流線の積分も走らず、キャッシュから粒子位置を求めるだけ。"""
+    def set_particle_time(self, time: float, interactive: bool = False, block: bool = False) -> None:
+        """タイムラインの時刻を設定する。OpenFOAM も流線の積分も走らず、キャッシュから粒子・煙の位置を求めるだけ。
+
+        interactive: 操作中 (ドラッグ・再生)。ボリューム煙では、間に合わなければ低解像度の煙を出す。
+        block:       必ずその時刻の煙を計算して表示する (動画の書き出し用)。
+        """
         duration = self.particle_duration()
         time = min(max(float(time), 0.0), duration) if duration > 0 else 0.0
-        if time == self.settings.particles_time:
+        if time == self.settings.particles_time and not block:
             return
         self.settings.particles_time = time
-        self._update_particle_frame()
+        if self.is_volume_smoke():
+            self.smoke_layer.show_time(time, interactive, block)
+        else:
+            self._update_particle_frame()
         self.viewport.request_render()
         self.timeChanged.emit(time)
+
+    def settle_particle_time(self) -> None:
+        """操作が終わったら、低解像度で出していた煙を本来の解像度へ戻す。"""
+        if self.is_volume_smoke() and self.smoke_layer.showing_preview:
+            self.smoke_layer.show_time(self.settings.particles_time, interactive=False)
+            self.viewport.request_render()
+
+    def smoke_ready(self) -> None:
+        """ボリューム煙の計算が終わった (または失敗した)。タイムラインの長さが変わるので通知する。"""
+        self._refresh_notice()
+        self.viewport.request_render()
+        self.changed.emit()
+        self.timeChanged.emit(self.settings.particles_time)
+
+    # ------------------------------------------------------------------ ボリューム煙の設定
+    def update_smoke(self, **values) -> None:
+        """煙の設定を変える。見た目だけの変更は描画だけを、煙の振る舞いの変更は必要な計算だけをやり直す。"""
+        smoke = self.settings.smoke
+        changed = set()
+        for name, value in values.items():
+            if not hasattr(smoke, name):
+                raise AttributeError(name)
+            if getattr(smoke, name) != value:
+                setattr(smoke, name, value)
+                changed.add(name)
+        if not changed:
+            return
+        appearance = {"color", "custom_color", "density", "opacity", "lighting", "light_intensity", "sample_distance", "backend"}
+        if changed <= appearance:
+            if "backend" in changed:
+                self.smoke_layer.renderer.remove()
+                self.smoke_layer.show_time(self.settings.particles_time)
+            else:
+                self.smoke_layer.refresh_appearance()
+        else:
+            self.smoke_layer.request_build()
+        self.viewport.request_render()
+        self.changed.emit()
+
+    def set_emitters(self, emitters: list) -> None:
+        smoke = self.settings.smoke
+        smoke.emitters = list(emitters)
+        smoke.emitters_initialized = True
+        self.smoke_layer.request_build()
+        self.viewport.request_render()
+        self.changed.emit()
+
+    def apply_smoke_preset(self, preset: str, add: bool = False) -> None:
+        """実車向けの配置で放出源を置く。``add`` なら今の放出源に追加する (気流は変えない)。"""
+        bounds = self.model_bounds()
+        if bounds is None or self.results is None:
+            return
+        smoke = self.settings.smoke
+        smoke.preset = preset
+        new = preset_emitters(preset, bounds, self.results.domain)
+        self.set_emitters((smoke.emitters if add else []) + new)
+
+    def _notice_lines(self) -> list[str]:
+        lines = [SMOKE_NOTICE if self.is_volume_smoke() else STEADY_NOTICE]
+        convergence = (self.scene.solver_summary or {}).get("convergence") or {}
+        if convergence.get("level") not in (None, "converged"):
+            lines.append(UNCONVERGED_NOTICE)
+        return lines
+
+    def _refresh_notice(self) -> None:
+        self._remove("post_notice")
+        s = self.settings
+        if s.particles_on and self.results is not None and (self._cloud is not None or self.smoke_layer.active):
+            # 定常解析の結果を、時間変化する流れの記録と誤解されないようにする
+            self.plotter.add_text("\n".join(self._notice_lines()), position="upper_left", font_size=8,
+                                  color=self.viewport.colors["text"], name="post_notice", render=False)
 
     def _refresh_particles(self) -> None:
         self._remove("post_particles", "post_notice")
         self._cloud = None
         s = self.settings
         if not (s.particles_on and self.results is not None):
+            if self.smoke_layer.active:
+                self.smoke_layer.deactivate()
             return
+        if self.is_volume_smoke():
+            hq = s.particles_style == STYLE_VOLUME_HQ
+            if not self.smoke_layer.active or self.smoke_layer.high_quality != hq:
+                self.smoke_layer.activate(high_quality=hq)
+            else:
+                self.smoke_layer.request_build()
+            self._refresh_notice()
+            return
+        if self.smoke_layer.active:
+            self.smoke_layer.deactivate()
         source = self.animation()
         if source is None or source.n_particles == 0:
             return
@@ -572,15 +693,49 @@ class PostView(QObject):
             self._cloud.point_data["rgba"] = self._particle_colors(frame)
             self.plotter.add_mesh(self._cloud, name="post_particles", scalars="rgba", rgba=True, line_width=s.particles_size,
                                   lighting=False, **self._common())
+        elif s.particles_style in (STYLE_RIBBON, STYLE_TUBE):
+            # リボン・チューブ: 同じ尾を、幅のある帯・太さのある管として描く (補助的な表示)
+            self._cloud = pv.PolyData(frame.points.copy(), lines=source.trail_connectivity())
+            self._cloud.point_data["rgba"] = self._particle_colors(frame)
+            self._add_swept(self._cloud, s.particles_style, s.particles_size)
         else:
             self._cloud = pv.PolyData(frame.points.copy())
             self._cloud.point_data["rgba"] = self._particle_colors(frame)
             self.plotter.add_mesh(self._cloud, name="post_particles", scalars="rgba", rgba=True, point_size=s.particles_size,
                                   render_points_as_spheres=True, **self._common())
         if source.is_steady:
-            # 定常解析の結果を、時間変化する流れの記録と誤解されないようにする
-            self.plotter.add_text(STEADY_NOTICE, position="upper_left", font_size=8, color=self.viewport.colors["text"],
-                                  name="post_notice", render=False)
+            self._refresh_notice()
+
+    def _add_swept(self, cloud: pv.PolyData, style: str, size: float) -> None:
+        """尾の折れ線を、リボン (帯) またはチューブ (管) にして描く。粒子が動くたびに VTK のパイプラインが作り直す。"""
+        import vtk
+
+        bounds = self.model_bounds() or (self.results.domain if self.results else (0, 4, 0, 1, 0, 1))
+        scale = max(bounds[1] - bounds[0], 1e-3) / 4.0           # 全長 4 m の車で、大きさ 7 px ≒ 半径 8 mm
+        radius = 0.0012 * float(size) * scale
+        if style == STYLE_TUBE:
+            sweep = vtk.vtkTubeFilter()
+            sweep.SetRadius(radius)
+            sweep.SetNumberOfSides(8)
+            sweep.CappingOff()
+        else:
+            sweep = vtk.vtkRibbonFilter()
+            sweep.SetWidth(2.0 * radius)
+            sweep.SetDefaultNormal(0.0, 0.0, 1.0)
+            sweep.UseDefaultNormalOn()                            # 帯を水平に広げる (流れを上から見やすい)
+        sweep.SetInputData(cloud)
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInputConnection(sweep.GetOutputPort())
+        mapper.SetScalarModeToUsePointFieldData()
+        mapper.SelectColorArray("rgba")
+        mapper.SetColorModeToDirectScalars()
+        mapper.ScalarVisibilityOn()
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        actor.GetProperty().SetAmbient(0.35)
+        actor.GetProperty().SetDiffuse(0.75)
+        actor.SetPickable(False)
+        self.plotter.add_actor(actor, name="post_particles", reset_camera=False, render=False, pickable=False)
 
     def _particle_colors(self, frame) -> np.ndarray:
         """粒子の色 (RGBA)。流速でカラーマップを引き、尾ほど・見えない粒子ほど透明にする。"""
@@ -590,7 +745,7 @@ class PostView(QObject):
         table = (colormaps[self.colormap("Umag")](np.linspace(0.0, 1.0, 256)) * 255).astype(np.uint8)
         index = np.clip((frame.speed - lo) / max(hi - lo, 1e-12) * 255, 0, 255).astype(np.int64)
         rgba = table[index]
-        base = 0.75 if self.settings.particles_style == STYLE_SMOKE else 1.0
+        base = {STYLE_SMOKE: 0.75, STYLE_RIBBON: 0.6, STYLE_TUBE: 0.6}.get(self.settings.particles_style, 1.0)
         rgba[:, 3] = (255 * base * frame.fade * frame.visible).astype(np.uint8)
         return rgba
 

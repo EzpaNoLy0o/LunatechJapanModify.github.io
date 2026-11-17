@@ -74,8 +74,8 @@ def test_layout_is_resizable_and_japanese(window):
     window.main_splitter.setSizes([500, 600, 300])
     assert window.main_splitter.sizes() != before
     assert "起動しました" in window.log_panel.toPlainText()
-    assert [window.left_tabs.tabText(i) for i in range(window.left_tabs.count())] == ["モデル", "風洞", "メッシュ", "解析"]
-    assert [window.right_tabs.tabText(i) for i in range(window.right_tabs.count())] == ["表示", "風洞・メッシュ", "空力結果", "可視化"]
+    assert [window.left_tabs.tabText(i) for i in range(window.left_tabs.count())] == ["モデル", "風洞", "メッシュ", "解析", "スモーク"]   # スモークは v0.7 で追加
+    assert [window.right_tabs.tabText(i) for i in range(window.right_tabs.count())] == ["表示", "風洞・メッシュ", "空力結果", "可視化", "スモーク表示"]
     # 解析していない状態で数値を表示しない
     assert all(label.text() == "未計算" for label in window.results_panel.result_labels.values())
 

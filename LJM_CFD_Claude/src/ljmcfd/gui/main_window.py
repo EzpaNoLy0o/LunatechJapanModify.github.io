@@ -36,6 +36,7 @@ from ..mesh.request import analysis_parts
 from ..report.export import export_report
 from ..report.snapshot import build_snapshot
 from .flow_bar import BASE_LOOP_SECONDS, FlowControlBar
+from .smoke_panel import SmokeEmitterPanel, SmokeRenderPanel
 from .job_runner import JobManager
 from .panels import DisplayPanel, InspectionTable, LogPanel, ModelPanel, PartTree, scrollable
 from .post_panel import PostPanel
@@ -99,6 +100,8 @@ class MainWindow(QMainWindow):
         self.left_tabs.addTab(scrollable(self.mesh_panel), "メッシュ")
         self.solver_panel = SolverPanel(self.scene, self._load_environment())
         self.left_tabs.addTab(scrollable(self.solver_panel), "解析")
+        self.smoke_emitter_panel = SmokeEmitterPanel(self.scene, self.post_view)
+        self.left_tabs.addTab(scrollable(self.smoke_emitter_panel), "スモーク")
         self.left_splitter = QSplitter(Qt.Vertical)
         self.left_splitter.addWidget(self._titled("モデル・パーツ", self.part_tree))
         self.left_splitter.addWidget(self.left_tabs)
@@ -115,6 +118,8 @@ class MainWindow(QMainWindow):
         self.post_panel = PostPanel(self.scene, self.post_view)
         self.post_scroll = scrollable(self.post_panel)
         self.right_tabs.addTab(self.post_scroll, "可視化")
+        self.smoke_render_panel = SmokeRenderPanel(self.scene, self.post_view)
+        self.right_tabs.addTab(scrollable(self.smoke_render_panel), "スモーク表示")
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.left_splitter)
@@ -951,7 +956,7 @@ class MainWindow(QMainWindow):
         cancelled = False
         try:
             for index in range(n_frames):
-                view.set_particle_time(duration * index / n_frames)
+                view.set_particle_time(duration * index / n_frames, block=True)     # 書き出しは必ずその時刻の煙で
                 image = Image.fromarray(self.viewport.capture_frame())
                 if scale != 1.0:
                     size = (max(int(image.width * scale), 2), max(int(image.height * scale), 2))
@@ -991,6 +996,7 @@ class MainWindow(QMainWindow):
         lines = [
             f"<b>{APP_NAME} {APP_EDITION}</b> v{__version__}",
             f"実装済みステージ: Stage {IMPLEMENTED_STAGE} / 6 (CAD・風洞・メッシュ・OpenFOAM 解析・可視化・スライダー操作・レポート出力)",
+            "v0.7: 解析した速度場から立体的な煙を作るボリューム煙 (Realistic Smoke Visualization) を追加",
             "解析は定常 RANS (k-ω SST) です。非定常解析・ホイール回転・多孔質体には未対応です。",
             "",
             f"Python {platform.python_version()} / PySide6 {PySide6.__version__} / "
@@ -1020,6 +1026,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self.jobs.cancel_all()
+        self.post_view.smoke_layer.shutdown()
         self._save_window_state()
         self.log_panel.detach()
         self.viewport.shutdown()
