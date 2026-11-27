@@ -432,7 +432,9 @@ def _generate(args: dict, ctx: JobContext, work: Path) -> dict:
             f"(レベル {plan['level']})、境界層 {plan['layers']} 層、{n_procs} プロセス、見積もり 約 {plan['estimated_cells'] / 1e6:.1f} 百万セル")
 
     # ---------------------------------------------------------------- 2. OpenFOAM の実行
-    mpirun = ["mpirun"] + (["--allow-run-as-root"] if info.get("is_root") else []) + \
+    from ..solver.run_job import ROOT_FLAG
+
+    mpirun = ["mpirun", ROOT_FLAG] + \
              (["--oversubscribe"] if n_procs > info.get("physical_cores", n_procs) else []) + ["-np", str(n_procs)]
     steps = [
         (0.10, "背景の格子 (blockMesh)", "blockMesh", "log.blockMesh"),

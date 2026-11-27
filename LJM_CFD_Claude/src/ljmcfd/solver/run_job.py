@@ -61,10 +61,12 @@ def _run_step(env: FoamEnvironment, case_dir: Path, ctx: JobContext, title: str,
     return False, text
 
 
+#: root で実行しているときだけ mpirun に付ける許可オプション (実行時にシェルで判定する。事前の判定がずれても動く)
+ROOT_FLAG = '$([ "$(id -u)" = 0 ] && echo --allow-run-as-root)'
+
+
 def _mpirun(n_procs: int, info: dict) -> str:
-    flags = []
-    if info["is_root"]:
-        flags.append("--allow-run-as-root")
+    flags = [ROOT_FLAG]
     if n_procs > info["physical_cores"]:
         flags.append("--oversubscribe")
     return " ".join(["mpirun", *flags, "-np", str(n_procs)])
