@@ -333,6 +333,7 @@ def test_boundary_layer_is_refused_when_touching_ground(box_step, cache_root, tm
 
 def test_unsupported_geometry_is_reported(cube_stl, open_box_step, cache_root, tmp_path):
     assembly, spec, settings = _scene(cube_stl, cache_root)
+    settings.mesher = "gmsh"            # 「自動」なら STL は snappyHexMesh へ回る (v0.8。test_snappy.py)。Gmsh を指定したら断る
     with pytest.raises(JobError, match="STL"):
         _run(assembly, spec, settings, tmp_path / "stl")
     assembly, spec, settings = _scene(open_box_step, cache_root)
