@@ -54,6 +54,8 @@ class MeshSettings:
     algorithm: str = ALGORITHM_HXT
     optimize: bool = True
     threads: int = 0                   # 0 = 自動 (CPU コア数)
+    mesher: str = "auto"               # "auto" (STL を含めば snappyHexMesh) | "gmsh" | "snappy"
+    reference_bounds: list | None = None   # 比較用に固定した基準寸法 (None なら解析対象の外形)。サイズ・細分化領域はこれで決める
     boundary_layer: BoundaryLayerSettings = field(default_factory=BoundaryLayerSettings)
 
     def to_dict(self) -> dict:
@@ -76,6 +78,8 @@ class MeshSettings:
                 value = int(value)
             elif isinstance(default, float):
                 value = float(value)
+            elif isinstance(default, str):
+                value = str(value)
             setattr(settings, name, value)
         base = BoundaryLayerSettings()
         settings.boundary_layer = BoundaryLayerSettings(
@@ -90,6 +94,8 @@ class MeshSettings:
         self.preset = preset
         if preset not in PRESETS:
             return
+        if self.reference_bounds:
+            model_bounds = self.reference_bounds          # 比較のため基準寸法を固定している
         length = max(model_bounds[1] - model_bounds[0], 1e-6)
         width = model_bounds[3] - model_bounds[2]
         height = model_bounds[5] - model_bounds[4]

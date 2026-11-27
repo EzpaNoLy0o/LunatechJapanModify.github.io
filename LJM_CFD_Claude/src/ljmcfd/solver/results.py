@@ -48,10 +48,35 @@ def force_summary(forces: np.ndarray, window: int, rho: float, speed: float, are
         "drag_pressure": float(mean_p[0]), "drag_viscous": float(mean_v[0]),
         "lift_pressure": float(mean_p[2]), "lift_viscous": float(mean_v[2]),
         "drag_range": float(np.ptp(total[:, 0])), "lift_range": float(np.ptp(total[:, 2])),
+        # 原点 (0, 0, 0) まわりのモーメント [N·m] (圧力 + 粘性)。前後の荷重配分は表示のときに基準点へ移して求める
+        "moment": [float(v) for v in (tail[:, 7:10] + tail[:, 10:13]).mean(axis=0)] if tail.shape[1] >= 13 else None,
         "cd": coefficient(mean_t[0]), "cl": coefficient(mean_t[2]), "cs": coefficient(mean_t[1]),
         "reference_area": float(area) if area else None,
         "dynamic_pressure": float(dynamic_pressure),
     }
+
+
+def axle_loads(forces: dict | None, front_axle_x: float, wheelbase: float | None, dynamic_pressure: float | None = None,
+               area: float | None = None) -> dict | None:
+    """空力荷重の前後配分。前輪・後輪の接地点 (Z = 0) で車体を支えたときに、各車軸が受け持つダウンフォース。
+
+    前輪の接地点 P = (x_f, 0, 0) まわりのピッチングモーメントは τ = M_O,y + x_f·F_z (M_O は原点まわり)。
+    後輪 (P から +X 方向にホイールベース WB) の受け持ち = τ / WB、前輪 = 全ダウンフォース − 後輪。
+    抗力も高さに応じて前後配分を変える (抗力は後輪側の荷重を増やす) が、それも τ に含まれている。
+    """
+    if not forces or forces.get("moment") is None or not wheelbase or wheelbase <= 0:
+        return None
+    fz = float(forces["lift"])
+    tau = float(forces["moment"][1]) + float(front_axle_x) * fz
+    rear = tau / float(wheelbase)
+    total = -fz
+    front = total - rear
+    result = {"front": front, "rear": rear, "total": total, "pitch_moment": tau,
+              "front_share": front / total if abs(total) > 1e-9 else None}
+    if dynamic_pressure and area:
+        scale = float(dynamic_pressure) * float(area)
+        result.update(cl_front=-front / scale, cl_rear=-rear / scale, cm=tau / (scale * float(wheelbase)))
+    return result
 
 
 def write_history(path: str | Path, residual_names: list[str], residuals: np.ndarray, forces: np.ndarray) -> None:

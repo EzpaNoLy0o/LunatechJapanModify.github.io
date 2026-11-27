@@ -97,6 +97,7 @@ C:\LJM_CFD_Claude\                  ← 設置先（既存の LJM CFD とは別�
 │  │  ├ request.py                  シーン → ジョブ引数
 │  │  ├ gmsh_job.py                 Gmsh による生成ジョブ
 │  │  ├ polymesh.py                 OpenFOAM polyMesh の組み立て・書き出し
+│  │  ├ snappy.py       [v0.8]      STL → snappyHexMesh (blockMesh・surfaceFeatures・checkMesh を含む)
 │  │  └ quality.py                  非直交性・歪度などの品質評価
 │  ├ solver\                        OpenFOAM 連携
 │  │  ├ environment.py              実行環境 (WSL / ネイティブ)・スクリプト実行
@@ -355,6 +356,26 @@ CAD ファイル ─(cad-import ジョブ)→ workspace\cache\cad\<key>\
   途中の時刻へは、12 コマごとに単精度で保存した状態から決まった手順で計算する (最初から計算したのとビット単位で同じ結果)。
 - **定常解析であることの明示**: 3D ビュー内 (動画にも残る) と操作バーに「定常 RANS の速度場に沿った煙」であることを、
   元の CFD 結果が未収束ならそのことも表示する。視覚効果のゆらぎ (既定 OFF) は表示だけの効果として分けている。
+
+### v0.8 — STL の車体 (snappyHexMesh) と前後の荷重配分
+
+- **メッシャーの選択** (`mesh/gmsh_job.resolve_mesher`): 設定が「自動」なら、B-Rep を持たないパーツ (STL) があれば snappyHexMesh。
+  ジョブ名は同じ `mesh-generate` で、GUI 側の流れ (別プロセス・進捗・成功時だけ置き換え) は変わらない。
+- **手順** (`mesh/snappy.py`): パーツごとにワールド座標 [m] のバイナリ STL を書き、blockMesh → surfaceFeatures →
+  (decomposePar → mpirun snappyHexMesh -parallel → reconstructPar -constant) → checkMesh → foamToVTK を、解析と同じ実行環境
+  (WSL / ネイティブ) で実行する。ログは `mesh/` に残す。
+- **格子の決め方**: 表面のセル = 全長 / n (粗い 150・標準 300・細かい 425)。背景のセル = 表面 × 2^レベル (全長の 1/6 前後)。
+  車体まわり・後流・遠方の後流の直方体で段階的に細かくし、表面から 2.5 セルの帯は表面と同じ細かさ。境界層は相対厚さ
+  (最終層 0.4、成長率 1.2) で 2〜3 層。パーツ別のサイズ倍率は細分化レベルに換算する (0.5 → +1)。
+- **接地**: 最下点が地面から 2 mm 以内のパーツ (タイヤ) だけを接地部の沈み込み量だけ下げる (車体は動かさない)。
+  タイヤが地面に食い込むので、snappyHexMesh が地面の下の部分を切り落とし、有限の接地面ができる。
+- **品質**: snappyHexMesh のメッシュは 5 角形以上の面を含むので、自前の品質計算 (三角形・四角形の面のみ対応) ではなく
+  checkMesh の出力を読む。境界層の被覆率は snappyHexMesh の集計表から読む。
+- **比較のための固定**: `TunnelSpec.fixed_domain` と `MeshSettings.reference_bounds` を基準ケースの値で固定すると、
+  形状を足しても計算領域・セルの大きさ・細分化の範囲が変わらない (差の比較にメッシュの違いを混ぜない)。
+- **前後の荷重配分** (`solver/results.axle_loads`): 荷重の平均とともに、原点まわりのモーメントの平均を記録する。
+  表示のときに前輪の接地点 P = (x_f, 0, 0) まわりへ移し (τ = M_O,y + x_f·F_z)、後輪 = τ / ホイールベース、前輪 = 全体 − 後輪。
+  基準点・ホイールベースを変えても解析はやり直さない。
 
 ## 7. 精度に関する取り決め
 

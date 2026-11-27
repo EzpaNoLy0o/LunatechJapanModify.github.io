@@ -533,6 +533,9 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "メッシュを生成できません", "\n".join(problems))
             return False
         request = self.scene.mesh_request(self.mesh_dir())
+        # STL のパーツは OpenFOAM の snappyHexMesh で作る。解析と同じ実行環境・並列数を使う
+        request["environment"] = self.solver_panel.environment().to_dict()
+        request["n_procs"] = int(self.scene.solver_settings.n_procs)
         logger.info("メッシュ生成を開始します (表面サイズ %.1f mm、遠方 %.0f mm、境界層 %s)",
                     self.scene.mesh_settings.surface_size * 1000, self.scene.mesh_settings.far_size * 1000,
                     "あり" if self.scene.mesh_settings.boundary_layer.enabled else "なし")

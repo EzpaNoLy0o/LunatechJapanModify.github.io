@@ -189,8 +189,23 @@ def _write_vtk(mesh: PolyMesh, cells: dict[str, np.ndarray], out_dir: Path) -> N
     surface.save(out_dir / "boundary.vtp", binary=True)
 
 
+def resolve_mesher(args: dict) -> str:
+    """使うメッシャー。設定が「自動」なら、STL (B-Rep を持たない) のパーツがあれば snappyHexMesh。"""
+    requested = (args.get("settings") or {}).get("mesher", "auto")
+    if requested in ("gmsh", "snappy"):
+        return requested
+    return "snappy" if any(not p.get("brep") for p in args.get("parts") or []) else "gmsh"
+
+
 def mesh_generate_job(args: dict, ctx: JobContext | None = None) -> dict:
-    """風洞メッシュを生成する。失敗した場合は作りかけの出力を残さず、以前のメッシュもそのまま保つ。"""
+    """風洞メッシュを生成する。失敗した場合は作りかけの出力を残さず、以前のメッシュもそのまま保つ。
+
+    STL のパーツ (B-Rep を持たない) を含む場合は、OpenFOAM の snappyHexMesh で作る (``snappy.py``)。
+    """
+    if resolve_mesher(args) == "snappy":
+        from .snappy import snappy_mesh_job
+
+        return snappy_mesh_job(args, ctx)
     out_dir = Path(args["out_dir"])
     tmp_dir = out_dir.with_name(out_dir.name + ".partial")
     shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -597,7 +612,7 @@ def load_report(mesh_dir: str | Path) -> dict | None:
         return None
     if report.get("report_version") != REPORT_VERSION:
         return None
-    if not all((mesh_dir / name).exists() for name in report.get("files", {}).values()):
+    if not all((mesh_dir / name).exists() for name in report.get("files", {}).values() if name):
         return None
     report["out_dir"] = str(mesh_dir)
     return report

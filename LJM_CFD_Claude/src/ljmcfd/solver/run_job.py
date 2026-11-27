@@ -126,7 +126,8 @@ def accuracy_notes(summary: dict) -> list[str]:
                      "数値的に行き過ぎている可能性があります (接地部の角など)。メッシュを細かくして確認してください。")
     checkmesh = (summary.get("mesh") or {}).get("checkmesh")
     if checkmesh and not checkmesh.get("ok"):
-        notes.append("OpenFOAM の checkMesh がメッシュの問題を報告しています。")
+        detail = " / ".join(m.strip(" *") for m in (checkmesh.get("messages") or [])[:3])
+        notes.append("OpenFOAM の checkMesh がメッシュの問題を報告しています" + (f": {detail}" if detail else "。"))
     return notes
 
 

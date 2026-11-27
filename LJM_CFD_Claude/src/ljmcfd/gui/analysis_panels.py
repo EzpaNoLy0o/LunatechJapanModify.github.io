@@ -156,11 +156,19 @@ class TunnelPanel(QWidget):
         self.summary = _label("", "value", wrap=True)
         self.reference_area = _spin(0.0001, 1000.0, 4, 0.01, " m²")
         self.reference_auto = QCheckBox("基準面積に前面投影面積を使用")
+        self.reference_length = LengthSpin()
+        self.reference_length.setSpecialValueText("未設定")
+        self.reference_length.setToolTip("代表長さ = ホイールベース。前後のダウンフォース配分とピッチングモーメント係数に使います。")
+        self.front_axle_x = LengthSpin()
+        self.front_axle_x.setRange(-1e6, 1e6)
+        self.front_axle_x.setToolTip("前輪軸の X 座標 (前後配分の基準。接地点は地面 Z = 0)。")
         self.issues = _label("", wrap=True)
         self.issues.setTextFormat(Qt.RichText)
         result_form.addRow(self.summary)
         result_form.addRow("基準面積 (Cd・Cl)", self.reference_area)
         result_form.addRow(self.reference_auto)
+        result_form.addRow("ホイールベース (代表長さ)", self.reference_length)
+        result_form.addRow("前輪軸の位置 X", self.front_axle_x)
         result_form.addRow(self.issues)
         layout.addWidget(result_box)
         layout.addStretch(1)
@@ -182,6 +190,8 @@ class TunnelPanel(QWidget):
         self.generate_button.clicked.connect(self.generateRequested)
         self.reference_area.valueChanged.connect(lambda v: self._set_spec("reference_area", v))
         self.reference_auto.toggled.connect(self._on_reference_auto)
+        self.reference_length.metresChanged.connect(lambda v: self._set_spec("reference_length", float(v) if v > 0 else None))
+        self.front_axle_x.metresChanged.connect(lambda v: self._set_spec("front_axle_x", float(v)))
         for signal in (scene.tunnelChanged, scene.transformsChanged, scene.cleared):
             signal.connect(self.refresh)
         scene.displayUnitChanged.connect(self._on_display_unit)
@@ -222,7 +232,7 @@ class TunnelPanel(QWidget):
             self.scene.modified.emit()
 
     def _on_display_unit(self, unit: str) -> None:
-        for spin in (*self.margin_spins.values(), self.clearance, self.sink):
+        for spin in (*self.margin_spins.values(), self.clearance, self.sink, self.reference_length, self.front_axle_x):
             spin.set_unit(unit)
         self.refresh()
 
@@ -266,6 +276,10 @@ class TunnelPanel(QWidget):
         for widget in (self.auto_button, self.generate_button):
             widget.setEnabled(has_parts)
         _set(self.reference_auto, tunnel.reference_area is None)
+        for spin, value in ((self.reference_length, tunnel.reference_length or 0.0), (self.front_axle_x, tunnel.front_axle_x)):
+            blocked = spin.blockSignals(True)
+            spin.set_metres(value)
+            spin.blockSignals(blocked)
         effective = tunnel.effective_reference_area()
         self.reference_area.setEnabled(tunnel.reference_area is not None)
         if effective is not None:
@@ -308,7 +322,30 @@ class MeshPanel(QWidget):
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(8)
 
+        mesher_box = QGroupBox("メッシャー")
+        mesher_layout = QVBoxLayout(mesher_box)
+        self.mesher_combo = QComboBox()
+        self.mesher_combo.addItem("自動 (STL を含めば snappyHexMesh)", "auto")
+        self.mesher_combo.addItem("Gmsh (STEP / IGES・四面体)", "gmsh")
+        self.mesher_combo.addItem("snappyHexMesh (STL・六面体 + 境界層)", "snappy")
+        self.mesher_info = _label("", wrap=True)
+        self.mesher_info.setTextFormat(Qt.RichText)
+        mesher_layout.addWidget(self.mesher_combo)
+        mesher_layout.addWidget(self.mesher_info)
+        layout.addWidget(mesher_box)
+
+        lock_box = QGroupBox("比較のための固定")
+        lock_layout = QVBoxLayout(lock_box)
+        self.lock_check = QCheckBox("計算領域とメッシュの基準寸法を、今の値に固定する")
+        self.lock_check.setToolTip("形状 (フラップなど) を追加しても計算領域とメッシュの細かさが変わらないようにします。"
+                                   "基準ケースで固定してから、追加の形状を読み込んでください。")
+        self.lock_info = _label("", "dim", wrap=True)
+        lock_layout.addWidget(self.lock_check)
+        lock_layout.addWidget(self.lock_info)
+        layout.addWidget(lock_box)
+
         size_box = QGroupBox("メッシュサイズ (四面体)")
+        self.size_box = size_box
         form = QFormLayout(size_box)
         self.preset_combo = QComboBox()
         for key, (_, text) in PRESETS.items():
@@ -350,7 +387,8 @@ class MeshPanel(QWidget):
         part_layout.addWidget(_label("倍率 0.5 = そのパーツの表面を標準の半分のサイズで分割します。", "dim", wrap=True))
         layout.addWidget(part_box)
 
-        bl_box = QGroupBox("境界層プリズム (実験的)")
+        bl_box = QGroupBox("境界層プリズム (実験的・Gmsh のみ)")
+        self.bl_box = bl_box
         bl_form = QFormLayout(bl_box)
         self.bl_check = QCheckBox("プリズム層を生成する")
         self.bl_layers = QSpinBox()
@@ -390,6 +428,8 @@ class MeshPanel(QWidget):
         layout.addStretch(1)
 
         self.preset_combo.activated.connect(self._on_preset)
+        self.mesher_combo.activated.connect(lambda _i: self._set("mesher", self.mesher_combo.currentData()))
+        self.lock_check.toggled.connect(self._on_lock)
         self.curvature.valueChanged.connect(lambda v: self._set_custom("curvature_elements", int(v)))
         self.wake_check.toggled.connect(lambda on: self._set("wake_enabled", bool(on)))
         self.wake_factor.valueChanged.connect(lambda v: self._set("wake_size_factor", v))
@@ -495,7 +535,63 @@ class MeshPanel(QWidget):
         if not self.stop_button.isEnabled():
             self.generate_button.setEnabled(bool(self.scene.parts))
         self.bl_info.setText(self._bl_text())
+        _set(self.mesher_combo, settings.mesher)
+        snappy = self.uses_snappy()
+        self.mesher_info.setText(self._mesher_text(snappy))
+        # snappyHexMesh ではプリセット (または「カスタム」の表面サイズ) だけを使う。Gmsh 専用の設定は触れないようにする
+        for widget in (self.curvature, self.wake_check, self.bl_box):
+            widget.setEnabled(not snappy)
+        tunnel = self.scene.tunnel
+        locked = bool(settings.reference_bounds and tunnel.fixed_domain)
+        _set(self.lock_check, locked)
+        self.lock_check.setEnabled(locked or self.scene.analysis_bounds() is not None)
+        if locked:
+            unit = self.scene.display_unit
+            b, d = settings.reference_bounds, tunnel.fixed_domain
+            self.lock_info.setText(
+                f"固定中: 基準寸法 {format_length(b[1] - b[0], unit)} × {format_length(b[3] - b[2], unit)} × {format_length(b[5] - b[4], unit)}、"
+                f"計算領域 X {format_length(d[0], unit)}〜{format_length(d[1], unit)}。形状を足しても、領域とメッシュの細かさは変わりません。")
+        else:
+            self.lock_info.setText("フラップの有無などを比べるときは、基準ケースでチェックを入れてから形状を追加してください。")
+        self.wake_factor.setEnabled(settings.wake_enabled and not snappy)
+        self.wake_length.setEnabled(settings.wake_enabled and not snappy)
         self._refresh_status()
+
+    def _on_lock(self, locked: bool) -> None:
+        settings, tunnel = self.scene.mesh_settings, self.scene.tunnel
+        bounds = self.scene.analysis_bounds()
+        if locked and bounds is not None:
+            settings.reference_bounds = [float(v) for v in bounds]
+            tunnel.fixed_domain = [float(v) for v in tunnel.domain_bounds(bounds)]
+        else:
+            settings.reference_bounds = None
+            tunnel.fixed_domain = None
+        self.scene.notify_tunnel_changed()
+        self.scene.notify_mesh_settings_changed()
+
+    def uses_snappy(self) -> bool:
+        mesher = self.scene.mesh_settings.mesher
+        if mesher in ("gmsh", "snappy"):
+            return mesher == "snappy"
+        return any(not part.entry.get("brep") for part in self.scene.parts)
+
+    def _mesher_text(self, snappy: bool) -> str:
+        if not snappy:
+            return "Gmsh で四面体メッシュを作ります (STEP / IGES の形状)。"
+        from ..mesh.snappy import snappy_plan
+
+        bounds = self.scene.analysis_bounds()
+        tunnel = self.scene.tunnel
+        text = ("<b>snappyHexMesh</b> (OpenFOAM) で六面体主体のメッシュと境界層を作ります (STL の形状)。"
+                "OpenFOAM の実行環境 (解析タブ) を使います。")
+        if bounds is None:
+            return text
+        plan = snappy_plan(self.scene.mesh_settings, bounds, tunnel.domain_bounds(bounds), tunnel.has_ground)
+        unit = self.scene.display_unit
+        return (text + f"<br>表面のセル {format_length(plan['surface_size'], unit)}、背景 {format_length(plan['background'], unit)}"
+                f" (細分化レベル {plan['level']})、境界層 {plan['layers']} 層、見積もり 約 {plan['estimated_cells'] / 1e6:.1f} 百万セル"
+                f"<br><span style='color:{theme.TEXT_DIM}'>プリセットの表面セル: 粗い = 全長/150、標準 = 全長/300、細かい = 全長/425。"
+                "地面に接するパーツ (タイヤ) だけを接地部の沈み込み量だけ下げます。</span>")
 
     def _bl_text(self) -> str:
         settings = self.scene.mesh_settings
@@ -530,7 +626,11 @@ class MeshPanel(QWidget):
         level = quality["summary"]["level"]
         level_text = {"ok": "良好", "warning": "注意", "error": "不良"}[level]
         cells = " / ".join(f"{name} {count:,}" for name, count in quality["cell_counts"].items())
-        if bl["generated"]:
+        if bl["generated"] and bl.get("coverage_percent") is not None:
+            # snappyHexMesh: 層の厚さはセルサイズに対する比で決まり、付かない所もある (被覆率で示す)
+            bl_line = (f'<span style="color:{theme.OK}">境界層: {bl["layers"]} 層 (snappyHexMesh)、被覆率 {bl["coverage_percent"]:.0f} %、'
+                       f'平均の厚さ {(bl["total_thickness"] or 0) * 1000:.1f} mm</span>')
+        elif bl["generated"]:
             bl_line = (f'<span style="color:{theme.OK}">境界層プリズム: 生成済み ({bl["layers"]} 層、'
                        f'第 1 層 {bl["first_height"] * 1000:.2f} mm、合計 {bl["total_thickness"] * 1000:.2f} mm)</span>')
         else:
@@ -564,19 +664,32 @@ class MeshQualityView(QTextEdit):
         rows = [
             ("セル数", f"{q['n_cells']:,}"), ("セルの内訳", "、".join(f"{k} {v:,}" for k, v in q["cell_counts"].items())),
             ("節点数", f"{q['n_points']:,}"), ("面数 (内部 / 境界)", f"{q['n_internal_faces']:,} / {q['n_boundary_faces']:,}"),
-            ("流体体積", f"{q['volume_total']:.4f} m³ (CAD との差 {report['volume_error']:.1e})"),
+            ("流体体積", f"{q['volume_total']:.4f} m³" + (f" (CAD との差 {report['volume_error']:.1e})" if report.get("volume_error") is not None else "")),
             ("セル体積 最小 / 最大", f"{q['volume_min']:.3e} / {q['volume_max']:.3e} m³"),
             ("非直交性 最大 / 平均", f"{q['non_ortho_max']:.1f}° / {q['non_ortho_mean']:.1f}°  (70° 超: {q['n_non_ortho_over_70']:,} 面)"),
             ("歪度 最大", f"{q['skewness_max']:.2f}  (4 超: {q['n_skewness_over_4']:,} 面)"),
-            ("隣接セル体積比 最大", f"{q['volume_ratio_max']:.1f}"),
+            ("隣接セル体積比 最大", f"{q['volume_ratio_max']:.1f}" if "volume_ratio_max" in q else "—"),
             ("負体積セル / 開いたセル", f"{q['n_negative_volumes']:,} / {q['n_open_cells']:,}"),
         ]
         gamma = report.get("tet_gamma")
         if gamma:
             rows.append(("四面体の形状品質 γ 最小 / 平均", f"{gamma['min']:.3f} / {gamma['mean']:.3f}  (1 が正四面体)"))
         bl = report["boundary_layer"]
-        rows.append(("境界層プリズム", f"生成済み: {bl['layers']} 層 / {bl['n_prisms']:,} セル" if bl["generated"] else f"未生成 — {bl['reason']}"))
-        rows.append(("メッシャー", f"Gmsh {report['gmsh_version']} ({report['algorithm']})、{report['seconds_total']:.1f} 秒"))
+        if bl.get("coverage_percent") is not None:
+            per_patch = "、".join(f"{name} {v['percent']:.0f} %" for name, v in (bl.get("per_patch") or {}).items())
+            rows.append(("境界層 (snappyHexMesh)", f"{bl['layers']} 層、被覆率 {bl['coverage_percent']:.0f} % ({per_patch})"))
+        else:
+            rows.append(("境界層プリズム", f"生成済み: {bl['layers']} 層 / {bl['n_prisms']:,} セル" if bl["generated"] else f"未生成 — {bl['reason']}"))
+        if report.get("mesher") == "snappyHexMesh":
+            snappy = report.get("snappy") or {}
+            rows.append(("メッシャー", f"{report['algorithm']}、{report['seconds_total']:.0f} 秒"))
+            rows.append(("表面 / 背景のセル", f"{snappy.get('surface_size', 0) * 1000:.1f} mm / {snappy.get('background', 0) * 1000:.0f} mm "
+                                            f"(細分化レベル {snappy.get('level', '—')})"))
+            sinks = "、".join(f"{name} {value * 1000:.0f} mm" for name, value in (report.get("part_sinks") or {}).items() if value)
+            rows.append(("接地部の沈み込み", sinks or "なし"))
+            rows.append(("checkMesh", "Mesh OK" if q.get("checkmesh_ok") else f"{q.get('checkmesh_failed', '?')} 件の指摘 (ログ: log.checkMesh)"))
+        else:
+            rows.append(("メッシャー", f"Gmsh {report['gmsh_version']} ({report['algorithm']})、{report['seconds_total']:.1f} 秒"))
         html = [f'<p style="color:{LEVEL_COLORS[summary["level"]]}"><b>{" ".join(summary["messages"])}</b></p>', "<table>"]
         html += [f"<tr><td {cell}>{k}</td><td {cell}><b>{v}</b></td></tr>" for k, v in rows]
         html.append("</table><p><b>境界パッチ</b></p><table>")
@@ -586,8 +699,12 @@ class MeshQualityView(QTextEdit):
             html.append(
                 f"<tr><td {cell}>{patch['name']}</td><td {cell}>{patch['type']}</td><td {cell} align='right'>{patch['n_faces']:,}</td>"
                 f"<td {cell} align='right'>{area:.4f}</td><td {cell}>{patch.get('part_name', '')}</td></tr>")
+        histogram = q.get("non_ortho_histogram")
+        if not histogram:
+            html.append("</table>")
+            self.setHtml("".join(html))
+            return
         html.append("</table><p><b>非直交性の分布 (内部面)</b></p><table>")
-        histogram = q["non_ortho_histogram"]
         total = max(sum(histogram), 1)
         labels = [f"{i * 10}–{i * 10 + 10}°" for i in range(9)] + ["90° 以上"]
         for label, count in zip(labels, histogram):

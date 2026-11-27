@@ -89,6 +89,30 @@ def coefficients(summary: dict | None, reference_area: float | None) -> dict:
 
 # ----------------------------------------------------------------------------- 項目の一覧
 
+def axle_rows(forces: dict | None, snapshot: dict) -> list[tuple]:
+    """前後の荷重配分の行 (ホイールベースが設定されているとき)。"""
+    from ..solver.results import axle_loads
+
+    tunnel = snapshot.get("tunnel") or {}
+    wheelbase = tunnel.get("reference_length")
+    if forces is None:
+        return []
+    if not wheelbase:
+        return [("前後の荷重配分", "ホイールベースが未設定", "")]
+    if forces.get("moment") is None:
+        return [("前後の荷重配分", "この結果には無し (v0.8 以降の解析で計算)", "")]
+    axle = axle_loads(forces, float(tunnel.get("front_axle_x") or 0.0), float(wheelbase), forces.get("dynamic_pressure"),
+                      snapshot.get("reference_area"))
+    rows = [("前輪側ダウンフォース", _number(axle["front"], 2), "N"), ("後輪側ダウンフォース", _number(axle["rear"], 2), "N"),
+            ("前後配分 (前輪側)", None if axle["front_share"] is None else f"{axle['front_share'] * 100:.1f}", "%"),
+            ("前輪軸まわりのピッチングモーメント", _number(axle["pitch_moment"], 2), "N·m")]
+    if "cl_front" in axle:
+        rows += [("Cl 前 (上向き正)", _number(axle["cl_front"], 4), ""), ("Cl 後 (上向き正)", _number(axle["cl_rear"], 4), ""),
+                 ("Cm (前輪軸まわり、代表長さ = ホイールベース)", _number(axle["cm"], 4), "")]
+    rows.append(("前後配分の基準", f"前輪軸 X = {float(tunnel.get('front_axle_x') or 0.0):.4f} m、ホイールベース {float(wheelbase):.4f} m", ""))
+    return rows
+
+
 def build_sections(snapshot: dict) -> list[dict]:
     """レポートの表 (節ごとの「項目・値・単位」)。HTML と CSV の両方がこれを使う。"""
     solver = snapshot.get("solver") or {}
@@ -144,6 +168,7 @@ def build_sections(snapshot: dict) -> list[dict]:
         ("Cd", missing_or(_number(coefficient["cd"], 4), no_area), ""),
         ("Cl (上向き正)", missing_or(_number(coefficient["cl"], 4), no_area), ""),
         ("Cs", missing_or(_number(coefficient["cs"], 4), no_area), ""),
+        *axle_rows(forces, snapshot),
         ("抗力の圧力成分", force("drag_pressure"), "N"),
         ("抗力の粘性成分", force("drag_viscous"), "N"),
         ("揚力の圧力成分", force("lift_pressure"), "N"),

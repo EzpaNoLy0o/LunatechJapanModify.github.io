@@ -116,6 +116,9 @@ class TunnelSpec:
     flow: FlowConditions = field(default_factory=FlowConditions)
     frontal_area: float | None = None       # 前面投影面積の計算値 [m²] (未計算なら None)
     reference_area: float | None = None     # Cd・Cl の基準面積 [m²]。None なら前面投影面積を使う
+    reference_length: float | None = None   # 代表長さ = ホイールベース [m]。前後の荷重配分とピッチングモーメント係数に使う
+    front_axle_x: float = 0.0               # 前輪軸の X 座標 [m] (前後の荷重配分の基準。接地点は Z = 0)
+    fixed_domain: list | None = None        # 比較用に固定した計算領域 [xmin, xmax, ymin, ymax, zmin, zmax] (None なら寸法から決める)
     generated: bool = False                 # ユーザーが風洞を生成 (確定) したか
 
     def to_dict(self) -> dict:
@@ -133,7 +136,7 @@ class TunnelSpec:
             value = data[name]
             if isinstance(default, bool):
                 value = bool(value)
-            elif isinstance(default, float) or name in ("frontal_area", "reference_area"):
+            elif isinstance(default, float) or name in ("frontal_area", "reference_area", "reference_length"):
                 value = None if value is None else float(value)
             setattr(spec, name, value)
         spec.flow = FlowConditions.from_dict(data.get("flow"))
@@ -145,7 +148,9 @@ class TunnelSpec:
         return self.reference_area if self.reference_area is not None else self.frontal_area
 
     def domain_bounds(self, model_bounds) -> tuple[float, float, float, float, float, float]:
-        """計算領域 (xmin, xmax, ymin, ymax, zmin, zmax) [m]。"""
+        """計算領域 (xmin, xmax, ymin, ymax, zmin, zmax) [m]。固定してあればその値 (形状を足しても変わらない)。"""
+        if self.fixed_domain:
+            return tuple(float(v) for v in self.fixed_domain)
         x0, x1, y0, y1, z0, z1 = model_bounds
         bottom = 0.0 if self.has_ground else z0 - self.margin_bottom
         return (

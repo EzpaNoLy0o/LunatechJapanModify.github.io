@@ -19,7 +19,7 @@ from ..solver.convergence import (  # noqa: E402
     LEVEL_CONVERGED, LEVEL_DIVERGED, LEVEL_MOSTLY, LEVEL_NOT_CONVERGED, LEVEL_UNDETERMINED,
 )
 from ..solver.environment import KIND_WSL, FoamEnvironment  # noqa: E402
-from ..solver.results import read_history  # noqa: E402
+from ..solver.results import axle_loads, read_history  # noqa: E402
 from ..solver.run_job import STATUS_FAILED  # noqa: E402
 from ..solver.settings import ITERATION_CHOICES  # noqa: E402
 from . import theme  # noqa: E402
@@ -361,8 +361,12 @@ class ResultsPanel(QWidget):
         ("drag", "Drag (抗力) [N]"), ("downforce", "Downforce [N]"), ("lift", "Lift (揚力・上向き正) [N]"),
         ("side", "Side Force (横力) [N]"), ("cd", "Cd"), ("cl", "Cl (上向き正)"),
         ("drag_pressure", "抗力の圧力成分 [N]"), ("drag_viscous", "抗力の粘性成分 [N]"),
+        ("downforce_front", "前輪側ダウンフォース [N]"), ("downforce_rear", "後輪側ダウンフォース [N]"),
+        ("front_share", "前後配分 (前輪側)"), ("cl_front", "Cl 前 / 後 (上向き正)"),
         ("speed_max", "最大流速 [m/s]"), ("pressure_max", "最大圧力 [Pa] (ゲージ)"), ("pressure_min", "最小圧力 [Pa] (ゲージ)"),
     )
+    #: 前後の荷重配分の行 (ホイールベースが無いと計算できない)
+    AXLE_ROWS = ("downforce_front", "downforce_rear", "front_share", "cl_front")
 
     def __init__(self, scene: Scene, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -477,10 +481,27 @@ class ResultsPanel(QWidget):
             "pressure_max": None if ranges.get("pressure_max") is None else f"{ranges['pressure_max']:.1f}",
             "pressure_min": None if ranges.get("pressure_min") is None else f"{ranges['pressure_min']:.1f}",
         }
+        tunnel = self.scene.tunnel
+        axle = axle_loads(forces, tunnel.front_axle_x, tunnel.reference_length, q, area)
+        if axle is not None:
+            values.update(
+                downforce_front=f"{axle['front']:.2f}", downforce_rear=f"{axle['rear']:.2f}",
+                front_share=None if axle["front_share"] is None else f"{axle['front_share'] * 100:.1f} %",
+                cl_front=f"{axle['cl_front']:.4f} / {axle['cl_rear']:.4f}" if "cl_front" in axle else None)
+        else:
+            values.update(downforce_front=None, downforce_rear=None, front_share=None, cl_front=None)
         for key, label in self.result_labels.items():
             value = values[key]
             if value is None:
-                label.setText("基準面積が未設定" if key in ("cd", "cl") else NOT_COMPUTED)
+                if key in self.AXLE_ROWS and forces.get("moment") is None:
+                    text = "この結果には無し (v0.8 以降の解析で計算)"
+                elif key in self.AXLE_ROWS and not tunnel.reference_length:
+                    text = "ホイールベースが未設定"
+                elif key in ("cd", "cl", "cl_front"):
+                    text = "基準面積が未設定"
+                else:
+                    text = NOT_COMPUTED
+                label.setText(text)
                 label.setStyleSheet(f"color: {theme.WARN};")
             else:
                 label.setText(value)
